@@ -1,0 +1,68 @@
+name: franchise_player
+description: A Flutter app for franchise player management.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Supabase for auth, database, and real-time messaging
+  supabase_flutter: ^1.10.0
+  
+  # Modular routing
+  go_router: ^13.2.0
+  
+  # Global state management
+  flutter_riverpod: ^2.5.1
+  
+  # Model generation and serialization
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  
+  # UUID generation for entities
+  uuid: ^4.3.3
+  
+  # Internationalization
+  intl: ^0.19.0
+  
+  # Strong typing and equality
+  equatable: ^2.0.5
+  
+  # Storage and HTTP
+  flutter_secure_storage: ^8.0.0
+  http: ^1.4.0
+  
+  # UI
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  
+  # Code generation
+  build_runner: ^2.4.11
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/logo.png
+    - web/assets/images/
+
+# Code generation instructions:
+# Run the following command to generate code:
+# flutter packages pub run build_runner build
+# 
+# For continuous generation during development:
+# flutter packages pub run build_runner watch
+#
+# To clean and regenerate:
+# flutter packages pub run build_runner build --delete-conflicting-outputs 
