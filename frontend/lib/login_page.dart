@@ -58,13 +58,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
   }
 
-  Future<void> _checkDiscordConfiguration() async {
-    print('🔧 Checking Discord OAuth configuration...');
-    // Supabase URL getter is not available on this client version; skipping direct URL print
-    print('🔧 Project ID: fxbpsuisqzffyggihvin');
-    print('🔧 Expected callback URL: https://fxbpsuisqzffyggihvin.supabase.co/auth/v1/callback');
-    print('🔧 Current origin: ${Uri.base.origin}');
-  }
+
 
   Future<void> _signInWithDiscord() async {
     setState(() {
@@ -278,16 +272,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 : const Text('Sign in with Discord'),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        // Debug button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 36,
-                          child: TextButton(
-                            onPressed: _checkDiscordConfiguration,
-                            child: const Text('🔧 Check Configuration (Debug)'),
-                          ),
-                        ),
+
                         const SizedBox(height: 20),
                         // Info text
                         Container(

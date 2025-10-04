@@ -31,6 +31,7 @@ mixin _$Player {
   String? get team => throw _privateConstructorUsedError;
   bool get isFreeAgent => throw _privateConstructorUsedError;
   int? get teamId => throw _privateConstructorUsedError;
+  String get franchiseId => throw _privateConstructorUsedError;
   int? get jerseyNum => throw _privateConstructorUsedError;
   int? get height => throw _privateConstructorUsedError;
   int? get weight => throw _privateConstructorUsedError;
@@ -71,6 +72,7 @@ abstract class $PlayerCopyWith<$Res> {
       String? team,
       bool isFreeAgent,
       int? teamId,
+      String franchiseId,
       int? jerseyNum,
       int? height,
       int? weight,
@@ -112,6 +114,7 @@ class _$PlayerCopyWithImpl<$Res, $Val extends Player>
     Object? team = freezed,
     Object? isFreeAgent = null,
     Object? teamId = freezed,
+    Object? franchiseId = null,
     Object? jerseyNum = freezed,
     Object? height = freezed,
     Object? weight = freezed,
@@ -171,6 +174,10 @@ class _$PlayerCopyWithImpl<$Res, $Val extends Player>
           ? _value.teamId
           : teamId // ignore: cast_nullable_to_non_nullable
               as int?,
+      franchiseId: null == franchiseId
+          ? _value.franchiseId
+          : franchiseId // ignore: cast_nullable_to_non_nullable
+              as String,
       jerseyNum: freezed == jerseyNum
           ? _value.jerseyNum
           : jerseyNum // ignore: cast_nullable_to_non_nullable
@@ -246,6 +253,7 @@ abstract class _$$PlayerImplCopyWith<$Res> implements $PlayerCopyWith<$Res> {
       String? team,
       bool isFreeAgent,
       int? teamId,
+      String franchiseId,
       int? jerseyNum,
       int? height,
       int? weight,
@@ -285,6 +293,7 @@ class __$$PlayerImplCopyWithImpl<$Res>
     Object? team = freezed,
     Object? isFreeAgent = null,
     Object? teamId = freezed,
+    Object? franchiseId = null,
     Object? jerseyNum = freezed,
     Object? height = freezed,
     Object? weight = freezed,
@@ -344,6 +353,10 @@ class __$$PlayerImplCopyWithImpl<$Res>
           ? _value.teamId
           : teamId // ignore: cast_nullable_to_non_nullable
               as int?,
+      franchiseId: null == franchiseId
+          ? _value.franchiseId
+          : franchiseId // ignore: cast_nullable_to_non_nullable
+              as String,
       jerseyNum: freezed == jerseyNum
           ? _value.jerseyNum
           : jerseyNum // ignore: cast_nullable_to_non_nullable
@@ -415,6 +428,7 @@ class _$PlayerImpl implements _Player {
       required this.team,
       required this.isFreeAgent,
       required this.teamId,
+      required this.franchiseId,
       this.jerseyNum,
       this.height,
       this.weight,
@@ -455,6 +469,8 @@ class _$PlayerImpl implements _Player {
   @override
   final int? teamId;
   @override
+  final String franchiseId;
+  @override
   final int? jerseyNum;
   @override
   final int? height;
@@ -483,7 +499,7 @@ class _$PlayerImpl implements _Player {
 
   @override
   String toString() {
-    return 'Player(id: $id, firstName: $firstName, lastName: $lastName, age: $age, playerBestOvr: $playerBestOvr, playerSchemeOvr: $playerSchemeOvr, speedRating: $speedRating, position: $position, team: $team, isFreeAgent: $isFreeAgent, teamId: $teamId, jerseyNum: $jerseyNum, height: $height, weight: $weight, college: $college, draftRound: $draftRound, draftPick: $draftPick, strengthRating: $strengthRating, agilityRating: $agilityRating, awareRating: $awareRating, catchRating: $catchRating, tackleRating: $tackleRating, throwPowerRating: $throwPowerRating, staminaRating: $staminaRating)';
+    return 'Player(id: $id, firstName: $firstName, lastName: $lastName, age: $age, playerBestOvr: $playerBestOvr, playerSchemeOvr: $playerSchemeOvr, speedRating: $speedRating, position: $position, team: $team, isFreeAgent: $isFreeAgent, teamId: $teamId, franchiseId: $franchiseId, jerseyNum: $jerseyNum, height: $height, weight: $weight, college: $college, draftRound: $draftRound, draftPick: $draftPick, strengthRating: $strengthRating, agilityRating: $agilityRating, awareRating: $awareRating, catchRating: $catchRating, tackleRating: $tackleRating, throwPowerRating: $throwPowerRating, staminaRating: $staminaRating)';
   }
 
   @override
@@ -509,6 +525,8 @@ class _$PlayerImpl implements _Player {
             (identical(other.isFreeAgent, isFreeAgent) ||
                 other.isFreeAgent == isFreeAgent) &&
             (identical(other.teamId, teamId) || other.teamId == teamId) &&
+            (identical(other.franchiseId, franchiseId) ||
+                other.franchiseId == franchiseId) &&
             (identical(other.jerseyNum, jerseyNum) ||
                 other.jerseyNum == jerseyNum) &&
             (identical(other.height, height) || other.height == height) &&
@@ -549,6 +567,7 @@ class _$PlayerImpl implements _Player {
         team,
         isFreeAgent,
         teamId,
+        franchiseId,
         jerseyNum,
         height,
         weight,
@@ -593,6 +612,7 @@ abstract class _Player implements Player {
       required final String? team,
       required final bool isFreeAgent,
       required final int? teamId,
+      required final String franchiseId,
       final int? jerseyNum,
       final int? height,
       final int? weight,
@@ -631,6 +651,8 @@ abstract class _Player implements Player {
   bool get isFreeAgent;
   @override
   int? get teamId;
+  @override
+  String get franchiseId;
   @override
   int? get jerseyNum;
   @override

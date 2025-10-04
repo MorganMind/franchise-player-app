@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:equatable/equatable.dart';
 
 part 'player.freezed.dart';
 part 'player.g.dart';
@@ -18,6 +17,7 @@ class Player with _$Player {
     required String? team,
     required bool isFreeAgent,
     required int? teamId,
+    required String franchiseId,
     int? jerseyNum,
     int? height,
     int? weight,

@@ -41,6 +41,15 @@ This is the Flutter frontend for the Franchise Player app that uses Supabase for
 - `lib/login_page.dart` - Authentication page
 - `lib/home_page.dart` - Dashboard (placeholder)
 
+## Development Rules
+
+### 🚫 NO MOCK DATA POLICY
+**NEVER use mock data, hardcoded data, or placeholder data as a crutch or temporary fix.**
+- All data must come from the real Supabase database
+- Use real providers and database queries
+- If data doesn't exist, create it in the database or handle the empty state properly
+- Mock data is forbidden - it creates technical debt and masks real issues
+
 ## Next Steps
 - Connect to backend API for data upload
 - Implement franchise data visualization

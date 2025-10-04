@@ -46,3 +46,5 @@ CREATE TRIGGER on_auth_user_created
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON public.user_profiles(email);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON public.user_profiles(username);
+
+

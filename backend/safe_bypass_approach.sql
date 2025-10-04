@@ -150,3 +150,5 @@ SELECT
 FROM information_schema.routines
 WHERE routine_name = 'create_user_profile'
 AND routine_schema = 'public';
+
+

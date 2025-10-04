@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class TradesPage extends StatelessWidget {
+  const TradesPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Trades')),
-      body: Center(
+      appBar: AppBar(title: const Text('Trades')),
+      body: const Center(
         child: Card(
           margin: EdgeInsets.all(32),
           child: Padding(

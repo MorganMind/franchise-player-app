@@ -5,6 +5,8 @@ import 'dart:html' as html;
 import 'package:go_router/go_router.dart';
 
 class UploadPage extends StatefulWidget {
+  const UploadPage({super.key});
+
   @override
   _UploadPageState createState() => _UploadPageState();
 }
@@ -20,12 +22,12 @@ class _UploadPageState extends State<UploadPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Upload Franchise Data'),
+        title: const Text('Upload Franchise Data'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.home),
+            icon: const Icon(Icons.home),
             onPressed: () => context.go('/home'),
           ),
         ],
@@ -38,17 +40,17 @@ class _UploadPageState extends State<UploadPage> {
             // Header
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Icon(Icons.upload_file, size: 48, color: Colors.blue),
-                    SizedBox(height: 16),
+                    const Icon(Icons.upload_file, size: 48, color: Colors.blue),
+                    const SizedBox(height: 16),
                     Text(
                       'Upload Your Madden Franchise Data',
                       style: Theme.of(context).textTheme.headlineSmall,
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       'Select a JSON file from your Madden franchise to analyze your team data',
                       style: Theme.of(context).textTheme.bodyMedium,
@@ -59,12 +61,12 @@ class _UploadPageState extends State<UploadPage> {
               ),
             ),
             
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             
             // File Selection
             Card(
               child: Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -72,12 +74,12 @@ class _UploadPageState extends State<UploadPage> {
                       'Select File',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: Container(
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.shade300),
                               borderRadius: BorderRadius.circular(8),
@@ -92,11 +94,11 @@ class _UploadPageState extends State<UploadPage> {
                             ),
                           ),
                         ),
-                        SizedBox(width: 16),
+                        const SizedBox(width: 16),
                         ElevatedButton.icon(
                           onPressed: _isUploading ? null : _selectFile,
-                          icon: Icon(Icons.folder_open),
-                          label: Text('Browse'),
+                          icon: const Icon(Icons.folder_open),
+                          label: const Text('Browse'),
                         ),
                       ],
                     ),
@@ -105,7 +107,7 @@ class _UploadPageState extends State<UploadPage> {
               ),
             ),
             
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             
             // Upload Button
             ElevatedButton.icon(
@@ -113,21 +115,21 @@ class _UploadPageState extends State<UploadPage> {
                 ? _uploadFile 
                 : null,
               icon: _isUploading 
-                ? SizedBox(
+                ? const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Icon(Icons.cloud_upload),
+                : const Icon(Icons.cloud_upload),
               label: Text(_isUploading ? 'Uploading...' : 'Upload File'),
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
             ),
             
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             
             // Status Display
             if (_uploadStatus.isNotEmpty)
@@ -136,7 +138,7 @@ class _UploadPageState extends State<UploadPage> {
                   ? Colors.green.shade50 
                   : Colors.red.shade50,
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
                       Icon(
@@ -147,7 +149,7 @@ class _UploadPageState extends State<UploadPage> {
                           ? Colors.green 
                           : Colors.red,
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _uploadStatus,
@@ -163,13 +165,13 @@ class _UploadPageState extends State<UploadPage> {
                 ),
               ),
             
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             
             // Uploaded Data Preview
             if (_uploadedData != null)
               Card(
                 child: Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -177,18 +179,18 @@ class _UploadPageState extends State<UploadPage> {
                         'Uploaded Data Preview',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Container(
                         height: 200,
-                        padding: EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: SingleChildScrollView(
                           child: Text(
-                            JsonEncoder.withIndent('  ').convert(_uploadedData),
-                            style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                            const JsonEncoder.withIndent('  ').convert(_uploadedData),
+                            style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
                           ),
                         ),
                       ),
@@ -230,7 +232,7 @@ class _UploadPageState extends State<UploadPage> {
 
     try {
       // Get the current session for authentication
-      final session = await Supabase.instance.client.auth.currentSession;
+      final session = Supabase.instance.client.auth.currentSession;
       if (session == null) {
         throw Exception('No active session. Please log in again.');
       }
@@ -267,8 +269,8 @@ class _UploadPageState extends State<UploadPage> {
 
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('File uploaded successfully!'),
+            const SnackBar(
+              content: SelectableText('File uploaded successfully!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -287,7 +289,7 @@ class _UploadPageState extends State<UploadPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Upload failed: $e'),
+          content: SelectableText('Upload failed: $e'),
           backgroundColor: Colors.red,
         ),
       );

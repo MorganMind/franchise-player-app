@@ -4,7 +4,7 @@ class ChannelPage extends StatelessWidget {
   final String serverId;
   final String franchiseId;
   final String channelId;
-  const ChannelPage({required this.serverId, required this.franchiseId, required this.channelId});
+  const ChannelPage({super.key, required this.serverId, required this.franchiseId, required this.channelId});
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +29,8 @@ class ChannelPage extends StatelessWidget {
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                Expanded(child: TextField(decoration: InputDecoration(hintText: 'Type a message...'))),
-                IconButton(onPressed: () {}, icon: Icon(Icons.send)),
+                const Expanded(child: TextField(decoration: InputDecoration(hintText: 'Type a message...'))),
+                IconButton(onPressed: () {}, icon: const Icon(Icons.send)),
               ],
             ),
           ),

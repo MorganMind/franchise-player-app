@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class VoiceVideoPlaceholder extends StatelessWidget {
+  const VoiceVideoPlaceholder({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Voice/Video Chat')),
-      body: Center(
+      appBar: AppBar(title: const Text('Voice/Video Chat')),
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

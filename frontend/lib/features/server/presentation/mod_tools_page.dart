@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class ModToolsPage extends StatelessWidget {
+  const ModToolsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Mod Tools & Audit Logs')),
-      body: Center(
+      appBar: AppBar(title: const Text('Mod Tools & Audit Logs')),
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

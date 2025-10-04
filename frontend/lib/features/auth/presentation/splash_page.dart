@@ -4,6 +4,8 @@ import '../data/auth_providers.dart';
 import 'package:go_router/go_router.dart';
 
 class SplashPage extends ConsumerWidget {
+  const SplashPage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authStateProvider);
@@ -20,7 +22,7 @@ class SplashPage extends ConsumerWidget {
         Future.microtask(() => context.go('/login'));
       },
     );
-    return Scaffold(
+    return const Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

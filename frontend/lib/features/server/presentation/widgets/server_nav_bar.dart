@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/server_providers.dart';
+import '../../data/server_repository.dart';
+import 'create_server_dialog.dart';
+import 'server_icon_widget.dart';
 
 class ServerNavBar extends ConsumerStatefulWidget {
+  const ServerNavBar({super.key});
+
   @override
   ConsumerState<ServerNavBar> createState() => _ServerNavBarState();
 }
@@ -33,7 +38,7 @@ class _ServerNavBarState extends ConsumerState<ServerNavBar> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final servers = ref.watch(serversProvider);
+    final serversAsync = ref.watch(serversProvider);
     final currentServerId = ref.watch(currentServerIdProvider);
     final navigationState = ref.watch(serverNavigationProvider);
 
@@ -50,162 +55,177 @@ class _ServerNavBarState extends ConsumerState<ServerNavBar> with TickerProvider
         ],
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            // Home button (now DM/chat icon)
-            Container(
-              width: 48,
-              height: 48,
-              margin: const EdgeInsets.only(left: 16, right: 8),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: () => context.go('/dm'),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Icon(
-                      Icons.chat_bubble_outline,
-                      color: Colors.black,
-                      size: 28,
+        child: serversAsync.when(
+          data: (servers) => Row(
+            children: [
+              // Home button (now DM/chat icon)
+              Container(
+                width: 48,
+                height: 48,
+                margin: const EdgeInsets.only(left: 16, right: 8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () => context.go('/home/dm'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: const Icon(
+                        Icons.chat_bubble_outline,
+                        color: Colors.black,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            // Separator
-            Container(
-              width: 1,
-              height: 32,
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE9ECEF),
-                borderRadius: BorderRadius.circular(1),
+              // Separator
+              Container(
+                width: 1,
+                height: 32,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9ECEF),
+                  borderRadius: BorderRadius.circular(1),
+                ),
               ),
-            ),
-            // Server carousel
-            Expanded(
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                itemCount: servers.length + 1, // +1 for add button
-                itemBuilder: (context, index) {
-                  if (index == servers.length) {
-                    // Add server button
+              // Server carousel
+              Expanded(
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  itemCount: servers.length + 1, // +1 for add button
+                  itemBuilder: (context, index) {
+                    if (index == servers.length) {
+                      // Add server button
+                      return Container(
+                        width: 48,
+                        height: 48,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => const CreateServerDialog(),
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: const Color(0xFFE9ECEF),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.add,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    final server = servers[index];
+                    final isActive = currentServerId == server['id'];
+                    final isPressed = pressedServerId == server['id'];
+                    
                     return Container(
                       width: 48,
                       height: 48,
                       margin: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(24),
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Create Server - Coming Soon!')),
-                            );
-                          },
-                          child: Container(
+                      child: GestureDetector(
+                        onTapDown: (_) {
+                          setState(() {
+                            pressedServerId = server['id'];
+                          });
+                          _scaleController.forward();
+                        },
+                        onTapUp: (_) {
+                          setState(() {
+                            pressedServerId = null;
+                          });
+                          _scaleController.reverse();
+                        },
+                        onTapCancel: () {
+                          setState(() {
+                            pressedServerId = null;
+                          });
+                          _scaleController.reverse();
+                        },
+                        onTap: () async {
+                          final serverId = server['id'];
+                          if (serverId != null) {
+                            // Track server access
+                            final repository = ServerRepository();
+                            await repository.trackServerAccess(serverId);
+                            
+                            // Update state and navigate
+                            ref.read(currentServerIdProvider.notifier).state = serverId;
+                            await ref.read(serverNavigationProvider.notifier).switchServer(serverId);
+                            if (context.mounted) {
+                              context.go('/server/$serverId');
+                            }
+                          }
+                        },
+                        child: AnimatedScale(
+                          scale: isPressed ? 1.2 : (isActive ? 1.1 : 1.0),
+                          duration: const Duration(milliseconds: 150),
+                          curve: Curves.easeInOut,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
                               border: Border.all(
-                                color: const Color(0xFFE9ECEF),
-                                width: 1,
+                                color: isActive 
+                                    ? Color(int.parse(server['color']!.substring(1), radix: 16) + 0xFF000000)
+                                    : const Color(0xFFE9ECEF),
+                                width: isActive ? 2 : 1,
                               ),
+                              boxShadow: [
+                                if (isActive)
+                                  BoxShadow(
+                                    color: Color(int.parse(server['color']!.substring(1), radix: 16) + 0xFF000000).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                if (isPressed)
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                              ],
                             ),
-                            child: Icon(
-                              Icons.add,
-                              color: Colors.black,
-                              size: 20,
+                            child: ServerIconWidget(
+                              iconUrl: server['icon_url'],
+                              emojiIcon: server['icon'],
+                              color: server['color'],
+                              size: 40,
+                              isActive: isActive,
+                              showBorder: false,
                             ),
                           ),
                         ),
                       ),
                     );
-                  }
-
-                  final server = servers[index];
-                  final isActive = currentServerId == server['id'];
-                  final isPressed = pressedServerId == server['id'];
-                  
-                  return Container(
-                    width: 48,
-                    height: 48,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    child: GestureDetector(
-                      onTapDown: (_) {
-                        setState(() {
-                          pressedServerId = server['id'];
-                        });
-                        _scaleController.forward();
-                      },
-                      onTapUp: (_) {
-                        setState(() {
-                          pressedServerId = null;
-                        });
-                        _scaleController.reverse();
-                      },
-                      onTapCancel: () {
-                        setState(() {
-                          pressedServerId = null;
-                        });
-                        _scaleController.reverse();
-                      },
-                      onTap: () async {
-                        ref.read(currentServerIdProvider.notifier).state = server['id'];
-                        await ref.read(serverNavigationProvider.notifier).switchServer(server['id']!);
-                        if (context.mounted) {
-                          context.go('/home/server/${server['id']}');
-                        }
-                      },
-                      child: AnimatedScale(
-                        scale: isPressed ? 1.2 : (isActive ? 1.1 : 1.0),
-                        duration: const Duration(milliseconds: 150),
-                        curve: Curves.easeInOut,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isActive 
-                                  ? Color(int.parse(server['color']!.substring(1), radix: 16) + 0xFF000000)
-                                  : const Color(0xFFE9ECEF),
-                              width: isActive ? 2 : 1,
-                            ),
-                            boxShadow: [
-                              if (isActive)
-                                BoxShadow(
-                                  color: Color(int.parse(server['color']!.substring(1), radix: 16) + 0xFF000000).withOpacity(0.3),
-                                  blurRadius: 8,
-                                  spreadRadius: 1,
-                                ),
-                              if (isPressed)
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              server['icon']!,
-                              style: const TextStyle(fontSize: 20),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => const Center(child: Text('Error loading servers')),
         ),
       ),
     );

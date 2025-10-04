@@ -3,35 +3,75 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../models/player.dart';
 import '../providers/player_provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/public_data_provider.dart';
+import 'public_player_profile.dart';
 
 class PlayerProfilePage extends ConsumerWidget {
   final String playerId;
   
-  const PlayerProfilePage({required this.playerId});
+  const PlayerProfilePage({super.key, required this.playerId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    
+    // Get franchise context from URL if available
+    final uri = GoRouterState.of(context).uri;
+    final routeState = GoRouterState.of(context);
+    String? franchiseId;
+    
+    print('🔍 DEBUG: PlayerProfilePage - Full URI: ${uri.toString()}');
+    print('🔍 DEBUG: PlayerProfilePage - URI path: ${uri.path}');
+    print('🔍 DEBUG: PlayerProfilePage - URI fragment: ${uri.fragment}');
+    print('🔍 DEBUG: PlayerProfilePage - Route path parameters: ${routeState.pathParameters}');
+    
+    // Check if we're in a franchise player route (e.g., /franchise/franchise-2/player/123)
+    if (routeState.pathParameters.containsKey('franchiseId')) {
+      franchiseId = routeState.pathParameters['franchiseId'];
+      print('🔍 DEBUG: PlayerProfilePage - Extracted franchiseId from route params: $franchiseId');
+    } else if (uri.path.startsWith('/franchise/')) {
+      // Fallback: parse from URL path (e.g., /franchise/franchise-2#/player/...)
+      final pathSegments = uri.path.split('/');
+      print('🔍 DEBUG: PlayerProfilePage - Path segments: $pathSegments');
+      if (pathSegments.length >= 3) {
+        franchiseId = pathSegments[2]; // Get franchise ID from /franchise/franchise-X
+        print('🔍 DEBUG: PlayerProfilePage - Extracted franchiseId from path: $franchiseId');
+      }
+    } else {
+      print('🔍 DEBUG: PlayerProfilePage - Not in franchise context');
+    }
+    
+    // Show public view for player routes (router handles authentication)
+    if (!isAuthenticated) {
+      return PublicPlayerProfilePage(
+        playerId: playerId,
+        franchiseId: franchiseId,
+      );
+    }
+    
+    // Show full player profile with server features for authenticated users
     final player = ref.watch(playerProvider.notifier).getPlayerById(playerId);
     final playersState = ref.watch(playerProvider);
 
     return playersState.when(
       loading: () => Scaffold(
-        appBar: AppBar(title: Text('Loading...')),
-        body: Center(child: CircularProgressIndicator()),
+        appBar: AppBar(title: const Text('Loading...')),
+        body: const Center(child: CircularProgressIndicator()),
       ),
       error: (error, stack) => Scaffold(
-        appBar: AppBar(title: Text('Error')),
+        appBar: AppBar(title: const Text('Error')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error, size: 64, color: Colors.red),
-              SizedBox(height: 16),
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
               Text('Error loading player: $error'),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.read(playerProvider.notifier).refreshData(),
-                child: Text('Retry'),
+                child: const Text('Retry'),
               ),
             ],
           ),
@@ -40,18 +80,18 @@ class PlayerProfilePage extends ConsumerWidget {
       data: (_) {
         if (player == null) {
           return Scaffold(
-            appBar: AppBar(title: Text('Player Not Found')),
+            appBar: AppBar(title: const Text('Player Not Found')),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.person_off, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('Player not found'),
-                  SizedBox(height: 16),
+                  const Icon(Icons.person_off, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('Player not found'),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context.go('/rosters'),
-                    child: Text('Back to Rosters'),
+                    child: const Text('Back to Rosters'),
                   ),
                 ],
               ),
@@ -75,7 +115,7 @@ class _PlayerProfileContent extends StatelessWidget {
     final gold = Theme.of(context).colorScheme.primary;
     return Scaffold(
       appBar: AppBar(
-        title: Text(player.fullName),
+        title: SelectableText(player.fullName),
         elevation: 2,
       ),
       body: SingleChildScrollView(
@@ -85,28 +125,28 @@ class _PlayerProfileContent extends StatelessWidget {
             // Header
             Container(
               color: gold.withOpacity(0.12),
-              padding: EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   CircleAvatar(
                     radius: 48,
                     backgroundColor: gold.withOpacity(0.25),
-                    child: Text(
+                    child: SelectableText(
                       player.position,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32, color: gold),
                     ),
                   ),
-                  SizedBox(width: 32),
+                  const SizedBox(width: 32),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        SelectableText(
                           player.fullName,
-                          style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             _bioItem('Team', player.team ?? 'FA'),
@@ -152,8 +192,8 @@ class _PlayerProfileContent extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Key Ratings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                      SizedBox(height: 12),
+                      const Text('Key Ratings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                      const SizedBox(height: 12),
                       Wrap(
                         spacing: 24,
                         runSpacing: 12,
@@ -185,9 +225,9 @@ class _PlayerProfileContent extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 8.0),
     child: Column(
       children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
-        SizedBox(height: 4),
-        Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+        SelectableText(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
+        const SizedBox(height: 4),
+        SelectableText(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
       ],
     ),
   );
@@ -195,9 +235,9 @@ class _PlayerProfileContent extends StatelessWidget {
   Widget _statItem(String label, String value) => Column(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
-      SizedBox(height: 4),
-      Text(value, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+      SelectableText(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700], fontSize: 13)),
+      const SizedBox(height: 4),
+      SelectableText(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
     ],
   );
 } 

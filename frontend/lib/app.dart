@@ -1321,7 +1321,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-    Widget _buildPublicContent() {
+  Widget _buildPublicContent() {
     // For non-authenticated users, show simplified content
     if (widget.initialPlayerId != null) {
       // Show player profile

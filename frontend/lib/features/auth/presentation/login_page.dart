@@ -5,6 +5,8 @@ import '../../../core/supabase/supabase_init.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
+  const LoginPage({super.key});
+
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
@@ -30,11 +32,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     try {
       await supabase.auth.signInWithOtp(
         email: _emailController.text,
-        emailRedirectTo: 'http://localhost:4000',
+        emailRedirectTo: 'http://localhost:3000',
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Magic link sent! Check your email.'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Magic link sent! Check your email.'), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -51,25 +53,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.watch(authStateProvider);
     authState.whenData((user) {
       if (user != null) {
-        Future.microtask(() => context.go('/home'));
+        Future.microtask(() {
+          if (!context.mounted) return;
+          context.go('/home');
+        });
       }
     });
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 400),
             child: Card(
               elevation: 0,
               color: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: Color(0xFFE9ECEF), width: 1),
+                side: const BorderSide(color: Color(0xFFE9ECEF), width: 1),
               ),
               child: Padding(
-                padding: EdgeInsets.all(40),
+                padding: const EdgeInsets.all(40),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -93,8 +98,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           ),
                         ),
                       ),
-                      SizedBox(height: 32),
-                      Text(
+                      const SizedBox(height: 32),
+                      const SelectableText(
                         'Welcome back!',
                         style: TextStyle(
                           color: Colors.black,
@@ -103,8 +108,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           letterSpacing: -1.0,
                         ),
                       ),
-                      SizedBox(height: 12),
-                      Text(
+                      const SizedBox(height: 12),
+                      const SelectableText(
                         'We\'re so excited to see you again!',
                         style: TextStyle(
                           color: Color(0xFF6C757D),
@@ -112,29 +117,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
-                      SizedBox(height: 40),
+                      const SizedBox(height: 40),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: Colors.black, fontSize: 16),
+                        style: const TextStyle(color: Colors.black, fontSize: 16),
                         decoration: InputDecoration(
                           labelText: 'Email',
-                          labelStyle: TextStyle(color: Color(0xFF6C757D), fontSize: 14),
+                          labelStyle: const TextStyle(color: Color(0xFF6C757D), fontSize: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Color(0xFFE9ECEF)),
+                            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Color(0xFFE9ECEF)),
+                            borderSide: const BorderSide(color: Color(0xFFE9ECEF)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.black, width: 2),
+                            borderSide: const BorderSide(color: Colors.black, width: 2),
                           ),
                           filled: true,
-                          fillColor: Color(0xFFF8F9FA),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          fillColor: const Color(0xFFF8F9FA),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) return 'Enter your email';
@@ -144,29 +149,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onFieldSubmitted: (_) => _signInWithMagicLink(),
                         textInputAction: TextInputAction.done,
                       ),
-                      SizedBox(height: 32),
+                      const SizedBox(height: 32),
                       if (_error != null) ...[
                         Container(
-                          padding: EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Color(0xFFF8D7DA),
+                            color: const Color(0xFFF8D7DA),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Color(0xFFF5C6CB)),
+                            border: Border.all(color: const Color(0xFFF5C6CB)),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.error, color: Color(0xFF721C24), size: 20),
-                              SizedBox(width: 12),
+                              const Icon(Icons.error, color: Color(0xFF721C24), size: 20),
+                              const SizedBox(width: 12),
                               Expanded(
-                                child: Text(
+                                child: SelectableText(
                                   _error!,
-                                  style: TextStyle(color: Color(0xFF721C24), fontSize: 14),
+                                  style: const TextStyle(color: Color(0xFF721C24), fontSize: 14),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                       ],
                       SizedBox(
                         width: double.infinity,
@@ -182,7 +187,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             elevation: 0,
                           ),
                           child: _isLoading
-                              ? SizedBox(
+                              ? const SizedBox(
                                   width: 24,
                                   height: 24,
                                   child: CircularProgressIndicator(
@@ -190,7 +195,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : Text(
+                              : const Text(
                                   'Send Magic Link',
                                   style: TextStyle(
                                     fontSize: 16,
@@ -200,8 +205,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                         ),
                       ),
-                      SizedBox(height: 24),
-                      Text(
+                      const SizedBox(height: 24),
+                      const Text(
                         'Need an account? Register',
                         style: TextStyle(
                           color: Colors.black,

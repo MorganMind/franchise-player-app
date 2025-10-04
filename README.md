@@ -1,196 +1,183 @@
-# Franchise Player App
+# Supabase CLI
 
-A comprehensive application for managing Madden franchise data with a Flutter frontend and Node.js backend, powered by Supabase.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## 🏗️ Project Structure
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-```
-franchise-player-app/
-├── frontend/          # Flutter app
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── supabase_client.dart
-│   │   ├── login_page.dart
-│   │   └── home_page.dart
-│   └── pubspec.yaml
-├── backend/           # Node.js API
-│   ├── index.js
-│   ├── package.json
-│   └── env.example
-└── README.md
-```
+This repository contains all the functionality for Supabase CLI.
 
-## 🚀 Quick Start
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-### Prerequisites
+## Getting started
 
-1. **Flutter SDK** - [Install Flutter](https://flutter.dev/docs/get-started/install)
-2. **Node.js** (v14 or higher) - [Install Node.js](https://nodejs.org/)
-3. **Supabase Account** - [Create Supabase Project](https://supabase.com/)
+### Install the CLI
 
-### Setup Instructions
-
-#### 1. Clone and Setup
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-git clone <your-repo-url>
-cd franchise-player-app
+npm i supabase --save-dev
 ```
 
-#### 2. Backend Setup
+To install the beta release channel:
 
 ```bash
-cd backend
-npm install
-cp env.example .env
-# Edit .env with your Supabase credentials
-npm run dev
+npm i supabase@beta --save-dev
 ```
 
-#### 3. Frontend Setup
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
+
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-cd frontend
-flutter pub get
-# Edit lib/supabase_client.dart with your Supabase credentials
-flutter run
+supabase bootstrap
 ```
 
-## 📱 Frontend (Flutter)
+Or using npx:
 
-The Flutter app provides:
-- Email-based authentication with magic links
-- Clean, modern UI
-- Ready for franchise data integration
-
-### Features
-- ✅ Authentication with Supabase
-- ✅ Responsive design
-- ✅ Error handling
-- 🔄 Dashboard (coming soon)
-- 🔄 Data visualization (coming soon)
-
-### Setup
-See [frontend/README.md](frontend/README.md) for detailed instructions.
-
-## 🔧 Backend (Node.js)
-
-The Node.js API handles:
-- JSON data ingestion from Madden Companion App
-- Supabase integration
-- RESTful endpoints
-
-### Features
-- ✅ JSON upload endpoint
-- ✅ Supabase integration
-- ✅ CORS enabled
-- ✅ Error handling
-- ✅ Health check endpoint
-
-### API Endpoints
-- `GET /health` - Health check
-- `POST /upload` - Upload JSON data
-- `GET /uploads` - Get all uploads (testing)
-
-### Setup
-See [backend/README.md](backend/README.md) for detailed instructions.
-
-## 🗄️ Database Setup
-
-Create the following table in your Supabase project:
-
-```sql
-CREATE TABLE json_uploads (
-  id BIGSERIAL PRIMARY KEY,
-  payload JSONB NOT NULL,
-  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-## 🌐 Deployment
-
-### Backend (Render)
-1. Push to GitHub
-2. Create Web Service on Render
-3. Set build command: `npm install`
-4. Set start command: `npm start`
-5. Add environment variables
-
-### Frontend (Coming Soon)
-- Flutter Web deployment
-- Mobile app stores
-
-## 🔧 Configuration
-
-### Environment Variables
-
-#### Backend (.env)
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=your-service-key
-PORT=3000
-```
-
-#### Frontend (lib/supabase_client.dart)
-```dart
-url: 'https://your-project.supabase.co'
-anonKey: 'your-anon-public-key'
-```
-
-## 🧪 Testing
-
-### Backend API
 ```bash
-# Health check
-curl http://localhost:3000/health
-
-# Upload test data
-curl -X POST http://localhost:3000/upload \
-  -H "Content-Type: application/json" \
-  -d '{"test": "data"}'
+npx supabase bootstrap
 ```
 
-### Frontend
-```bash
-cd frontend
-flutter test
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
+
+## Docs
+
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
+
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
 ```
-
-## 📋 TODO
-
-### Frontend
-- [ ] Connect to backend API
-- [ ] Implement data visualization
-- [ ] Add user profile management
-- [ ] Create franchise data dashboard
-
-### Backend
-- [ ] Add authentication middleware
-- [ ] Implement user-specific data storage
-- [ ] Add data validation
-- [ ] Create data processing pipelines
-
-### General
-- [ ] Add comprehensive testing
-- [ ] Implement CI/CD pipeline
-- [ ] Add monitoring and logging
-- [ ] Performance optimization
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the ISC License.
-
-## 🆘 Support
-
-For support and questions:
-- Check the individual README files in `/frontend` and `/backend`
-- Review the Supabase documentation
-- Open an issue in the repository 

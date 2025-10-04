@@ -1,32 +1,73 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'server_repository.dart';
 
-// Mock server data
-final mockServers = [
-  {'id': '1', 'name': 'Madden League Alpha', 'icon': '🏈', 'color': '#5865F2'},
-  {'id': '2', 'name': 'Franchise Player Support', 'icon': '🛠️', 'color': '#57F287'},
-  {'id': '3', 'name': 'NFL Fans United', 'icon': '🏆', 'color': '#FEE75C'},
-  {'id': '4', 'name': 'Draft Day', 'icon': '📋', 'color': '#EB459E'},
-  {'id': '5', 'name': 'Pro Bowl League', 'icon': '⭐', 'color': '#ED4245'},
-  {'id': '6', 'name': 'Rookie Season', 'icon': '🌱', 'color': '#3BA55C'},
-];
+// Repository provider
+final serverRepositoryProvider = Provider<ServerRepository>((ref) {
+  return ServerRepository();
+});
 
 // Current active server ID provider
 final currentServerIdProvider = StateProvider<String?>((ref) => null);
 
-// Server list provider
-final serversProvider = Provider<List<Map<String, String>>>((ref) => mockServers);
+// Server list provider - now fetches from Supabase
+final serversProvider = StateNotifierProvider<ServerListNotifier, AsyncValue<List<Map<String, dynamic>>>>((ref) {
+  return ServerListNotifier(ref);
+});
+
+class ServerListNotifier extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
+  final Ref _ref;
+
+  ServerListNotifier(this._ref) : super(const AsyncValue.loading()) {
+    _fetchServers();
+  }
+
+  Future<void> _fetchServers() async {
+    try {
+      final repository = _ref.read(serverRepositoryProvider);
+      final servers = await repository.getServers();
+      state = AsyncValue.data(servers);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  void reorderServers(List<Map<String, dynamic>> servers) {
+    state = AsyncValue.data(servers);
+  }
+}
+
+// User's servers provider - fetches servers the user is a member of
+final userServersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(serverRepositoryProvider);
+  return await repository.getUserServers();
+});
+
+// Recent servers provider - fetches recently accessed servers
+final recentServersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repository = ref.watch(serverRepositoryProvider);
+  return await repository.getRecentServers(limit: 3);
+});
 
 // Current active server provider
-final currentServerProvider = Provider<Map<String, String>?>((ref) {
+final currentServerProvider = Provider<Map<String, dynamic>?>((ref) {
   final currentId = ref.watch(currentServerIdProvider);
-  final servers = ref.watch(serversProvider);
-  if (currentId == null) return null;
-  return servers.firstWhere((server) => server['id'] == currentId);
+  final serversAsync = ref.watch(serversProvider);
+  
+  if (currentId == null || serversAsync.isLoading || serversAsync.hasError) {
+    return null;
+  }
+  
+  final servers = serversAsync.value ?? [];
+  try {
+    return servers.firstWhere((server) => server['id'] == currentId);
+  } catch (e) {
+    return null;
+  }
 });
 
 // Server navigation state provider
 final serverNavigationProvider = StateNotifierProvider<ServerNavigationNotifier, ServerNavigationState>((ref) {
-  return ServerNavigationNotifier();
+  return ServerNavigationNotifier(ref);
 });
 
 class ServerNavigationState {
@@ -54,18 +95,143 @@ class ServerNavigationState {
 }
 
 class ServerNavigationNotifier extends StateNotifier<ServerNavigationState> {
-  ServerNavigationNotifier() : super(ServerNavigationState());
+  final Ref _ref;
+  
+  ServerNavigationNotifier(this._ref) : super(ServerNavigationState());
 
   Future<void> switchServer(String serverId) async {
     state = state.copyWith(isLoading: true, error: null);
     
-    // Simulate loading delay
-    await Future.delayed(Duration(milliseconds: 300));
+    try {
+      // Validate that the server exists
+      final repository = _ref.read(serverRepositoryProvider);
+      final server = await repository.getServerById(serverId);
+      
+      if (server != null) {
+        state = state.copyWith(
+          currentServerId: serverId,
+          isLoading: false,
+        );
+      } else {
+        state = state.copyWith(
+          error: 'Server not found',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to switch server: $e',
+        isLoading: false,
+      );
+    }
+  }
+
+  Future<void> createServer({
+    required String name,
+    String? description,
+    String? icon,
+    String? color,
+    String? serverType,
+    String? visibility,
+    String? iconUrl,
+  }) async {
+    state = state.copyWith(isLoading: true, error: null);
     
-    state = state.copyWith(
-      currentServerId: serverId,
-      isLoading: false,
-    );
+    try {
+      final repository = _ref.read(serverRepositoryProvider);
+      final newServer = await repository.createServer(
+        name: name,
+        description: description,
+        icon: icon,
+        color: color,
+        serverType: serverType,
+        visibility: visibility,
+        iconUrl: iconUrl,
+      );
+      
+      if (newServer != null) {
+        print('Server created successfully, invalidating providers...');
+        // Invalidate the servers provider to refresh the list
+        _ref.invalidate(serversProvider);
+        _ref.invalidate(userServersProvider);
+        
+        print('Switching to new server: ${newServer['id']}');
+        // Switch to the new server
+        await switchServer(newServer['id']);
+        
+        print('Server creation completed successfully');
+      } else {
+        print('Failed to create server - newServer is null');
+        state = state.copyWith(
+          error: 'Failed to create server',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to create server: $e',
+        isLoading: false,
+      );
+    }
+  }
+
+  Future<void> joinServer(String serverId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final repository = _ref.read(serverRepositoryProvider);
+      final success = await repository.joinServer(serverId);
+      
+      if (success) {
+        // Invalidate the user servers provider to refresh the list
+        _ref.invalidate(userServersProvider);
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          error: 'Failed to join server',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to join server: $e',
+        isLoading: false,
+      );
+    }
+  }
+
+  Future<void> leaveServer(String serverId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final repository = _ref.read(serverRepositoryProvider);
+      final success = await repository.leaveServer(serverId);
+      
+      if (success) {
+        // Invalidate the user servers provider to refresh the list
+        _ref.invalidate(userServersProvider);
+        
+        // If we're leaving the current server, clear the selection
+        if (state.currentServerId == serverId) {
+          state = state.copyWith(
+            currentServerId: null,
+            isLoading: false,
+          );
+        } else {
+          state = state.copyWith(isLoading: false);
+        }
+      } else {
+        state = state.copyWith(
+          error: 'Failed to leave server',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to leave server: $e',
+        isLoading: false,
+      );
+    }
   }
 
   void setError(String error) {
@@ -74,5 +240,77 @@ class ServerNavigationNotifier extends StateNotifier<ServerNavigationState> {
 
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  void clearCurrentServer() {
+    state = state.copyWith(currentServerId: null);
+  }
+
+  void refreshServers() {
+    _ref.invalidate(serversProvider);
+    _ref.invalidate(userServersProvider);
+  }
+
+  Future<void> reorderServers(List<String> serverIds) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final repository = _ref.read(serverRepositoryProvider);
+      final success = await repository.reorderServers(serverIds);
+      
+      if (success) {
+        // Invalidate all server-related providers to refresh the lists
+        _ref.invalidate(serversProvider);
+        _ref.invalidate(userServersProvider);
+        _ref.invalidate(recentServersProvider);
+        state = state.copyWith(isLoading: false);
+      } else {
+        state = state.copyWith(
+          error: 'Failed to reorder servers',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to reorder servers: $e',
+        isLoading: false,
+      );
+    }
+  }
+
+  Future<void> deleteServer(String serverId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    
+    try {
+      final repository = _ref.read(serverRepositoryProvider);
+      final success = await repository.deleteServer(serverId);
+      
+      if (success) {
+        // Invalidate all server-related providers to refresh the lists
+        _ref.invalidate(serversProvider);
+        _ref.invalidate(userServersProvider);
+        _ref.invalidate(recentServersProvider);
+        
+        // If we're deleting the current server, clear the selection
+        if (state.currentServerId == serverId) {
+          state = state.copyWith(
+            currentServerId: null,
+            isLoading: false,
+          );
+        } else {
+          state = state.copyWith(isLoading: false);
+        }
+      } else {
+        state = state.copyWith(
+          error: 'Failed to delete server',
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to delete server: $e',
+        isLoading: false,
+      );
+    }
   }
 } 

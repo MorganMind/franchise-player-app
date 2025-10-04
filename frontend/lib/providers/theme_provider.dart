@@ -36,7 +36,7 @@ final lightThemeProvider = Provider<ThemeData>((ref) {
   return ThemeData(
     brightness: Brightness.light,
     primaryColor: Colors.black,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: Colors.black,
       secondary: Colors.white,
     ),
@@ -45,12 +45,12 @@ final lightThemeProvider = Provider<ThemeData>((ref) {
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.black,
       foregroundColor: Colors.white,
       elevation: 2,
     ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: Colors.black,
       foregroundColor: Colors.white,
     ),
@@ -62,7 +62,7 @@ final darkThemeProvider = Provider<ThemeData>((ref) {
   return ThemeData(
     brightness: Brightness.dark,
     primaryColor: Colors.white,
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: Colors.white,
       secondary: Colors.black,
     ),
@@ -71,12 +71,12 @@ final darkThemeProvider = Provider<ThemeData>((ref) {
       color: Colors.black,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
       elevation: 2,
     ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
     ),

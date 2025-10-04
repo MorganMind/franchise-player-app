@@ -12,10 +12,17 @@ dependencies:
     sdk: flutter
   
   # Supabase for auth, database, and real-time messaging
-  supabase_flutter: ^1.10.0
+  supabase_flutter: ^2.9.1
+  
+  # LiveKit for voice and video
+  livekit_client: ^1.5.0
   
   # Modular routing
   go_router: ^13.2.0
+  
+  # Web URL strategy
+  flutter_web_plugins:
+    sdk: flutter
   
   # Global state management
   flutter_riverpod: ^2.5.1
@@ -35,10 +42,16 @@ dependencies:
   
   # Storage and HTTP
   flutter_secure_storage: ^8.0.0
-  http: ^1.4.0
+  http: ^0.13.0
   
   # UI
   cupertino_icons: ^1.0.2
+  
+  # Image handling
+  image: ^4.1.7
+  
+  # Drag and drop
+  reorderable_grid_view: ^2.2.8
 
 dev_dependencies:
   flutter_test:

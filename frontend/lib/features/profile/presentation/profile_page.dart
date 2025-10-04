@@ -5,6 +5,8 @@ import '../../auth/data/auth_providers.dart';
 import '../../../core/theme/app_theme.dart';
 
 class ProfilePage extends ConsumerWidget {
+  const ProfilePage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Dummy user data
@@ -24,14 +26,14 @@ class ProfilePage extends ConsumerWidget {
           // Server sidebar (Discord-style layout, soft styling)
           Container(
             width: 72,
-            color: Color(0xFFF8F9FA),
+            color: const Color(0xFFF8F9FA),
             child: Column(
               children: [
                 // Home button
                 Container(
                   width: 48,
                   height: 48,
-                  margin: EdgeInsets.only(top: 12, bottom: 8),
+                  margin: const EdgeInsets.only(top: 12, bottom: 8),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -59,9 +61,9 @@ class ProfilePage extends ConsumerWidget {
                 Container(
                   width: 32,
                   height: 1,
-                  margin: EdgeInsets.symmetric(vertical: 8),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: Color(0xFFE9ECEF),
+                    color: const Color(0xFFE9ECEF),
                     borderRadius: BorderRadius.circular(1),
                   ),
                 ),
@@ -77,8 +79,8 @@ class ProfilePage extends ConsumerWidget {
                   // Header
                   Container(
                     height: 64,
-                    padding: EdgeInsets.symmetric(horizontal: 24),
-                    decoration: BoxDecoration(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       border: Border(
                         bottom: BorderSide(color: Color(0xFFE9ECEF), width: 1),
@@ -86,9 +88,9 @@ class ProfilePage extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.arrow_back, color: Colors.black, size: 24),
-                        SizedBox(width: 12),
-                        Text(
+                        const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                        const SizedBox(width: 12),
+                        const Text(
                           'Profile',
                           style: TextStyle(
                             color: Colors.black,
@@ -97,14 +99,14 @@ class ProfilePage extends ConsumerWidget {
                             letterSpacing: -0.5,
                           ),
                         ),
-                        Spacer(),
+                        const Spacer(),
                         // Theme toggle
                         IconButton(
                           icon: Icon(
                             ref.watch(appThemeProvider) == ThemeMode.dark 
                                 ? Icons.light_mode 
                                 : Icons.dark_mode,
-                            color: Color(0xFF6C757D),
+                            color: const Color(0xFF6C757D),
                             size: 20,
                           ),
                           onPressed: () {
@@ -117,7 +119,7 @@ class ProfilePage extends ConsumerWidget {
                           tooltip: 'Toggle theme',
                         ),
                         // User avatar and logout
-                        Container(
+                        SizedBox(
                           width: 36,
                           height: 36,
                           child: Material(
@@ -130,7 +132,7 @@ class ProfilePage extends ConsumerWidget {
                                   color: Colors.black,
                                   borderRadius: BorderRadius.circular(18),
                                 ),
-                                child: Center(
+                                child: const Center(
                                   child: Text(
                                     'U',
                                     style: TextStyle(
@@ -144,9 +146,9 @@ class ProfilePage extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         PopupMenuButton<String>(
-                          icon: Icon(Icons.more_vert, color: Color(0xFF6C757D), size: 20),
+                          icon: const Icon(Icons.more_vert, color: Color(0xFF6C757D), size: 20),
                           onSelected: (value) async {
                             if (value == 'logout') {
                               try {
@@ -157,14 +159,14 @@ class ProfilePage extends ConsumerWidget {
                               } catch (e) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Logout failed: $e')),
+                                    SnackBar(content: SelectableText('Logout failed: $e')),
                                   );
                                 }
                               }
                             }
                           },
                           itemBuilder: (context) => [
-                            PopupMenuItem(
+                            const PopupMenuItem(
                               value: 'logout',
                               child: Row(
                                 children: [
@@ -182,22 +184,22 @@ class ProfilePage extends ConsumerWidget {
                   // Content
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // User Info Section
                           Container(
-                            padding: EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Color(0xFFE9ECEF), width: 1),
+                              border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.08),
                                   blurRadius: 16,
-                                  offset: Offset(0, 4),
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
@@ -210,8 +212,8 @@ class ProfilePage extends ConsumerWidget {
                                     color: Colors.black,
                                     borderRadius: BorderRadius.circular(40),
                                   ),
-                                  child: Center(
-                                    child: Text(
+                                  child: const Center(
+                                    child: SelectableText(
                                       'U',
                                       style: TextStyle(
                                         color: Colors.white,
@@ -221,12 +223,12 @@ class ProfilePage extends ConsumerWidget {
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 24),
-                                Expanded(
+                                const SizedBox(width: 24),
+                                const Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
+                                      SelectableText(
                                         'User',
                                         style: TextStyle(
                                           color: Colors.black,
@@ -236,7 +238,7 @@ class ProfilePage extends ConsumerWidget {
                                         ),
                                       ),
                                       SizedBox(height: 4),
-                                      Text(
+                                      SelectableText(
                                         'user@example.com',
                                         style: TextStyle(
                                           color: Color(0xFF6C757D),
@@ -244,7 +246,7 @@ class ProfilePage extends ConsumerWidget {
                                         ),
                                       ),
                                       SizedBox(height: 8),
-                                      Text(
+                                      SelectableText(
                                         'Member since 2023',
                                         style: TextStyle(
                                           color: Color(0xFF6C757D),
@@ -255,20 +257,20 @@ class ProfilePage extends ConsumerWidget {
                                   ),
                                 ),
                                 IconButton(
-                                  icon: Icon(Icons.edit, color: Color(0xFF6C757D)),
+                                  icon: const Icon(Icons.edit, color: Color(0xFF6C757D)),
                                   onPressed: () {
                                     // TODO: Edit profile
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Edit Profile - Coming Soon!')),
+                                      const SnackBar(content: SelectableText('Edit Profile - Coming Soon!')),
                                     );
                                   },
                                 ),
                               ],
                             ),
                           ),
-                          SizedBox(height: 32),
+                          const SizedBox(height: 32),
                           // Statistics Section
-                          Text(
+                          const Text(
                             'Statistics',
                             style: TextStyle(
                               color: Colors.black,
@@ -277,10 +279,10 @@ class ProfilePage extends ConsumerWidget {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           GridView.count(
                             shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
+                            physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: 3,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
@@ -294,9 +296,9 @@ class ProfilePage extends ConsumerWidget {
                               _buildStatCard('Seasons', '${userStats['seasons_completed']}', Icons.calendar_today),
                             ],
                           ),
-                          SizedBox(height: 32),
+                          const SizedBox(height: 32),
                           // Settings Section
-                          Text(
+                          const Text(
                             'Settings',
                             style: TextStyle(
                               color: Colors.black,
@@ -305,17 +307,17 @@ class ProfilePage extends ConsumerWidget {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          SizedBox(height: 16),
+                          const SizedBox(height: 16),
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Color(0xFFE9ECEF), width: 1),
+                              border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.08),
                                   blurRadius: 16,
-                                  offset: Offset(0, 4),
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
@@ -327,51 +329,51 @@ class ProfilePage extends ConsumerWidget {
                                   Icons.person,
                                   () {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Account Settings - Coming Soon!')),
+                                      const SnackBar(content: SelectableText('Account Settings - Coming Soon!')),
                                     );
                                   },
                                 ),
-                                Divider(height: 1, color: Color(0xFFE9ECEF)),
+                                const Divider(height: 1, color: Color(0xFFE9ECEF)),
                                 _buildSettingTile(
                                   'Notifications',
                                   'Configure notification preferences',
                                   Icons.notifications,
                                   () {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Notifications - Coming Soon!')),
+                                      const SnackBar(content: SelectableText('Notifications - Coming Soon!')),
                                     );
                                   },
                                 ),
-                                Divider(height: 1, color: Color(0xFFE9ECEF)),
+                                const Divider(height: 1, color: Color(0xFFE9ECEF)),
                                 _buildSettingTile(
                                   'Privacy',
                                   'Manage your privacy settings',
                                   Icons.security,
                                   () {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Privacy Settings - Coming Soon!')),
+                                      const SnackBar(content: SelectableText('Privacy Settings - Coming Soon!')),
                                     );
                                   },
                                 ),
-                                Divider(height: 1, color: Color(0xFFE9ECEF)),
+                                const Divider(height: 1, color: Color(0xFFE9ECEF)),
                                 _buildSettingTile(
                                   'Help & Support',
                                   'Get help and contact support',
                                   Icons.help,
                                   () {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Help & Support - Coming Soon!')),
+                                      const SnackBar(content: SelectableText('Help & Support - Coming Soon!')),
                                     );
                                   },
                                 ),
-                                Divider(height: 1, color: Color(0xFFE9ECEF)),
+                                const Divider(height: 1, color: Color(0xFFE9ECEF)),
                                 _buildSettingTile(
                                   'About',
                                   'App version and information',
                                   Icons.info,
                                   () {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('About - Coming Soon!')),
+                                      const SnackBar(content: SelectableText('About - Coming Soon!')),
                                     );
                                   },
                                 ),
@@ -396,12 +398,12 @@ class ProfilePage extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Color(0xFFE9ECEF), width: 1),
+        border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -409,19 +411,19 @@ class ProfilePage extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: Colors.black, size: 24),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.black,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyle(
+            style: const TextStyle(
               color: Color(0xFF6C757D),
               fontSize: 12,
               fontWeight: FontWeight.w500,
@@ -440,35 +442,35 @@ class ProfilePage extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Row(
             children: [
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Color(0xFFF8F9FA),
+                  color: const Color(0xFFF8F9FA),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: Colors.black, size: 20),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Color(0xFF6C757D),
                         fontSize: 14,
                       ),
@@ -476,7 +478,7 @@ class ProfilePage extends ConsumerWidget {
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios, color: Color(0xFF6C757D), size: 16),
+              const Icon(Icons.arrow_forward_ios, color: Color(0xFF6C757D), size: 16),
             ],
           ),
         ),
