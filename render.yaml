@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: franchise-player-web
+    dockerfilePath: frontend/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
