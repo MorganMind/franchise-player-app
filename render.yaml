@@ -1,7 +1,9 @@
 services:
-  - type: web
+  - type: static
     name: franchise-player-web
-    dockerfilePath: frontend/Dockerfile
-    envVars:
-      - key: NODE_ENV
-        value: production
+    buildCommand: echo "Using pre-built Flutter web files"
+    staticPublishPath: frontend/build/web
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
