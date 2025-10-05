@@ -308,13 +308,45 @@ const CONFIG = {
   SUPABASE_URL: process.env.FRANCHISE_SUPABASE_URL,
   SUPABASE_ANON_KEY: process.env.FRANCHISE_SUPABASE_ANON_KEY,
   BRIDGE_URL: process.env.FRANCHISE_SUPABASE_URL + '/functions/v1/discord-bridge',
-  VALUATION_URL: process.env.FRANCHISE_SUPABASE_URL + '/functions/v1/valuation',
+  VALUATION_URL: process.env.FP_VALUATION_URL,
+  VALUATION_API_KEY: process.env.FP_VALUATION_API_KEY,
+  FRANCHISE_ID: process.env.FP_FRANCHISE_ID,
   BOT_SECRET: process.env.DISCORD_BOT_SECRET
 };
 
 // HMAC signature generation
 function generateSignature(timestamp, body, secret) {
   return crypto.createHmac('sha256', secret).update(timestamp + body).digest('hex');
+}
+
+// Call valuation function
+async function calculatePlayerValue(ovr, age, pos, devTrait) {
+  try {
+    const response = await fetch(CONFIG.VALUATION_URL + '/compute', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.VALUATION_API_KEY}`
+      },
+      body: JSON.stringify({
+        ovr: ovr,
+        age: age,
+        pos: pos,
+        dev: devTrait,
+        franchise_id: CONFIG.FRANCHISE_ID
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('❌ Valuation error:', error.message);
+    return { ok: false, error: error.message };
+  }
 }
 
 // Make authenticated request to bridge
@@ -490,8 +522,10 @@ BOT_SUPABASE_URL=https://your-bot-project.supabase.co
 BOT_SUPABASE_ANON_KEY=your_bot_anon_key
 BOT_SUPABASE_SERVICE_KEY=your_bot_service_key
 
-# Valuation Function URL
-VALUATION_FUNCTION_URL=https://fxbpsuisqzffyggihvin.supabase.co/functions/v1/valuation
+# Valuation Function Configuration
+FP_VALUATION_URL=https://fxbpsuisqzffyggihvin.supabase.co/functions/v1/valuation
+FP_VALUATION_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4YnBzdWlzcXpmZnlnZ2lodmluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEwMzkwNTMsImV4cCI6MjA2NjYxNTA1M30.HxGXe3Jn7HV6GFeLXtvi5tTeqPYG092ZstmrEkpA8mw
+FP_FRANCHISE_ID=
 ```
 
 ---
