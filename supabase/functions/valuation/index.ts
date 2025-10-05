@@ -20,7 +20,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 type Settings = {
   pos_spread_scalar: number;
   pos_offsets: Record<string, number>;
-  ovr_curve: { qb60: number; qb99: number };
+  ovr_curve: { qb60: number; qb99: number; gamma?: number };
   age: {
     base_schedule: Record<string, number>;
     cliff_25_27: number;
@@ -28,6 +28,10 @@ type Settings = {
     gain: number;
     floor_age: number;
     floor_value: number;
+    post29_decay_enabled?: boolean;
+    post29_start_age?: number;
+    post29_decay_ratio?: number;
+    penalty_relief_over28?: number;
   };
   youth_buffer: {
     band: Record<string, number>;
@@ -84,7 +88,9 @@ export function qbValueFromOVR(ovr:number, settings:Settings){
   const t = Math.max(0, Math.min(1, (ovr-60)/39));
   const p = Math.round(224 - t*223); // 60→224, 99→1
   const jj1 = jjPickValue(1), jj224 = jjPickValue(224);
-  const g = (jjPickValue(p) - jj224) / (jj1 - jj224);
+  const g0 = (jjPickValue(p) - jj224) / (jj1 - jj224); // ∈[0,1]
+  const gamma = settings.ovr_curve.gamma ?? 1.0;
+  const g = Math.pow(Math.max(0, Math.min(1, g0)), gamma);
   return qb60 + (qb99 - qb60) * g;
 }
 
@@ -158,39 +164,44 @@ export function ageMult(age:number, settings:Settings){
   const a = Math.max(20, Math.min(40, Math.floor(age)));
 
   const base = settings.age.base_schedule[String(a)] ?? 1.0;
-  const cliff = (a>=28) ? settings.age.cliff_28_plus
-               : (a>=25 && a<=27) ? settings.age.cliff_25_27
-               : 1.0;
 
-  // 1) Apply gain around 1.0
+  // Relief dial (0.15 means "reduce penalty 15%" for 28+)
+  const relief = Math.max(0, Math.min(0.5, settings.age.penalty_relief_over28 ?? 0));
+
+  // Adjusted 28+ cliff: move toward 1.0 by 'relief' fraction of its penalty
+  const cliff28_raw = settings.age.cliff_28_plus ?? 1.0;        // e.g., 0.75
+  const cliff28_adj = 1 - (1 - cliff28_raw) * (1 - relief);     // e.g., 0.75 → 0.7875 @ relief=0.15
+
+  const cliff = (a>=28) ? cliff28_adj
+             : (a>=25 && a<=27) ? (settings.age.cliff_25_27 ?? 1.0)
+             : 1.0;
+
+  // 1) Gain around 1.0
   let m = 1 + (settings.age.gain ?? 4.0) * (base - 1);
 
-  // 2) Then apply cliff
+  // 2) Apply cliff (now using adjusted 28+)
   m = m * cliff;
 
-  // 3) Post-29 geometric decay (smooth decline 30..39)
-  //    m(29) is the anchor; for age>=30 use m(29) * ratio^(age-29)
+  // 3) Post-29 geometric decay (anchor at 29), relief lightens the decay ratio
   const decayEnabled = settings.age.post29_decay_enabled ?? true;
   const startAge = settings.age.post29_start_age ?? 29;
-  const ratio = settings.age.post29_decay_ratio ?? 0.82; // ~18% drop per year by default
+  const ratio_raw = settings.age.post29_decay_ratio ?? 0.82;     // drop per year = (1 - ratio_raw)
+  const ratio_adj = 1 - (1 - ratio_raw) * (1 - relief);          // e.g., 0.82 → 0.847 @ relief=0.15
 
   if (decayEnabled && a >= (startAge + 1)) {
-    // compute m at the anchor age using the same rules
+    // mStart at the anchor age (29) with the same rules
     const baseStart = settings.age.base_schedule[String(startAge)] ?? 1.0;
-    const cliffStart = (startAge>=28) ? (settings.age.cliff_28_plus ?? 1.0)
-                     : (startAge>=25 && startAge<=27) ? (settings.age.cliff_25_27 ?? 1.0)
-                     : 1.0;
+    const cliffStart = cliff28_adj; // 29 uses 28+ cliff
     const mStart = (1 + (settings.age.gain ?? 4.0) * (baseStart - 1)) * cliffStart;
     const k = a - startAge;
-    m = mStart * Math.pow(ratio, k);
+    m = mStart * Math.pow(ratio_adj, k);
   }
 
-  // 4) Floor clamp (e.g., age >= 40 => 0)
+  // 4) Floor clamp (e.g., ≥ 40 → 0)
   const floorAge = settings.age.floor_age ?? 40;
   const floorValue = settings.age.floor_value ?? 0.0;
   if (a >= floorAge) m = floorValue;
 
-  // never negative
   return Math.max(0, m);
 }
 

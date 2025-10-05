@@ -245,6 +245,7 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
   Widget _ovrAnchorsCard() {
     final qb60 = _getNum(['ovr_curve', 'qb60'], fallback: 2.5);
     final qb99 = _getNum(['ovr_curve', 'qb99'], fallback: 6000);
+    final gamma = _getNum(['ovr_curve', 'gamma'], fallback: 1.0);
     final spread = _getNum(['pos_spread_scalar'], fallback: 1.5);
 
     return Card(
@@ -257,6 +258,7 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
             const SizedBox(height: 8),
             _numRow('QB @ 60 OVR', qb60, 0, 20000, (v) => _setNum(['ovr_curve', 'qb60'], v)),
             _numRow('QB @ 99 OVR', qb99, 0, 50000, (v) => _setNum(['ovr_curve', 'qb99'], v)),
+            _sliderRow('OVR Emphasis γ (>1 lifts high OVR)', gamma, 0.80, 1.50, 0.01, (v) => _setNum(['ovr_curve', 'gamma'], v)),
             const Divider(),
             _sliderRow('Position Spread Scalar (s)', spread, 0.0, 3.0, 0.01, (v) => _setNum(['pos_spread_scalar'], v)),
             const SizedBox(height: 6),
@@ -271,6 +273,7 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
     final gain = _getNum(['age', 'gain'], fallback: 4.0);
     final cliff25 = _getNum(['age', 'cliff_25_27'], fallback: 0.90);
     final cliff28 = _getNum(['age', 'cliff_28_plus'], fallback: 0.75);
+    final relief = _getNum(['age', 'penalty_relief_over28'], fallback: 0.0);
     final floorAge = _getNum(['age', 'floor_age'], fallback: 35).toInt();
     final floorVal = _getNum(['age', 'floor_value'], fallback: 0.0);
     final schedule = _getMap(['age', 'base_schedule']);
@@ -286,6 +289,7 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
             _sliderRow('Age Gain (intensity)', gain, 0.0, 6.0, 0.05, (v) => _setNum(['age','gain'], v)),
             _sliderRow('Cliff 25–27 Multiplier', cliff25, 0.5, 1.0, 0.01, (v) => _setNum(['age','cliff_25_27'], v)),
             _sliderRow('Cliff 28+ Multiplier', cliff28, 0.5, 1.0, 0.01, (v) => _setNum(['age','cliff_28_plus'], v)),
+            _sliderRow('Age 28+ Relief (reduce penalty)', relief, 0.0, 0.30, 0.01, (v) => _setNum(['age','penalty_relief_over28'], v)),
             _intSliderRow('Floor Age (clamp ≤)', floorAge, 20, 40, (v) => _setNum(['age','floor_age'], v.toDouble())),
             _sliderRow('Floor Value (≥ Floor Age)', floorVal, 0.0, 1.0, 0.01, (v) => _setNum(['age','floor_value'], v)),
             const SizedBox(height: 12),
