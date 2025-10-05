@@ -33,6 +33,11 @@ type Settings = {
     post29_decay_ratio?: number;
     penalty_relief_over28?: number;
   };
+  pos_longevity?: {
+    start_age?: Record<string, number>;    // per-position decay start override
+    floor_age?: Record<string, number>;    // per-position floor override
+    ratio_scale?: Record<string, number>;  // optional per-position ratio scale (default 1.0)
+  };
   youth_buffer: {
     band: Record<string, number>;
     dmax: Record<string, number>;
@@ -47,6 +52,34 @@ type Settings = {
     thresholds: Record<string, number>;  // "75","80","85","90","95" → net factors
     xf_fourth_at?: number;               // default 95
     age_band: Record<string, number>;    // 20..40 → 0..1 taper (younger ~1.0)
+  };
+  physical?: {
+    height?: {
+      enabled: boolean;
+      inches_to_cap?: number;        // default 4
+      cap_down_scale?: number;       // default 1.4 (cap_down = cap_up * scale)
+      baselines_in: Record<string, number>;
+      cap_up: Record<string, number>;          // decimals, e.g. 0.07 for 7%
+      slope_up_per_in?: Record<string, number>;
+      slope_down_per_in?: Record<string, number>;
+      cap_down?: Record<string, number>;
+    };
+    speed?: {
+      enabled: boolean;
+      cap_up: Record<string, number>;           // decimals, e.g., WR: 0.12
+      cap_down_scale?: number;                  // default 1.25
+      pivot: Record<string, number>;            // SPD pivot per position
+      steps_up: Record<string, number>;         // points above pivot to reach cap
+      steps_down?: Record<string, number>;      // points below pivot to reach cap_down
+    };
+    thp?: {
+      enabled: boolean;
+      cap_up_qb: number;
+      cap_down_scale?: number;
+      pivot_qb: number;
+      steps_up_qb?: number;
+      steps_down_qb?: number;
+    };
   };
   gravity?: { enabled: boolean; threshold: number; vmax: number };
   future_picks?: {
@@ -166,46 +199,219 @@ export function computeFuturePickPoints(
   return { points, baseline_pick: p0, factor, base_points: basePts };
 }
 
-// Age multiplier (with cliffs, gain, and floor)
-export function ageMult(age:number, settings:Settings){
-  const a = Math.max(20, Math.min(40, Math.floor(age)));
+// ---- Height multiplier ----
+const DEFAULT_HEIGHT_CFG = {
+  enabled: true,
+  inches_to_cap: 4,
+  cap_down_scale: 1.4,
+  baselines_in: {
+    QB:73, LB:73,
+    WR:72, CB:72, FS:72, SS:72,
+    LE:74, RE:74, LOLB:74, ROLB:74, DT:74,
+    LT:75, LG:75, C:75, RG:75, RT:75,
+    TE:76,
+    HB:70, RB:70
+  },
+  cap_up: {
+    WR:0.07, CB:0.07, FS:0.07, SS:0.07,
+    LB:0.06, TE:0.06,
+    LE:0.05, RE:0.05, LOLB:0.05, ROLB:0.05, DT:0.05,
+    QB:0.05,
+    HB:0.04, RB:0.04,
+    LT:0.03, LG:0.03, C:0.03, RG:0.03, RT:0.03
+  }
+} as const;
 
+const DEFAULT_SPEED_CFG = {
+  enabled: true,
+  cap_up: {
+    WR:0.12, CB:0.12, FS:0.12, SS:0.12,
+    HB:0.10,
+    MLB:0.09,
+    LE:0.08, RE:0.08, LOLB:0.08, ROLB:0.08,
+    QB:0.07,
+    TE:0.06,
+    DT:0.04,
+    LT:0.02, LG:0.02, C:0.02, RG:0.02, RT:0.02,
+    K:0.00, P:0.00, LS:0.00
+  },
+  cap_down_scale: 1.25,
+  pivot: {
+    WR:91, CB:91,
+    FS:89, SS:89,
+    MLB:87,
+    LE:86, RE:86, LOLB:86, ROLB:86,
+    DT:75,
+    LT:70, LG:70, C:70, RG:70, RT:70,
+    HB:91, QB:88, TE:87, K:70, P:70, LS:70
+  },
+  steps_up: {
+    HB:5, MLB:5, LE:5, RE:5, LOLB:5, ROLB:5, QB:5, TE:5, DT:5, LT:5, LG:5, C:5, RG:5, RT:5, K:5, P:5, LS:5,
+    WR:8, CB:8, FS:8, SS:8
+  },
+  steps_down: {
+    WR:5, CB:5, FS:5, SS:5, HB:5, MLB:5, LE:5, RE:5, LOLB:5, ROLB:5, QB:5, TE:5, DT:5, LT:5, LG:5, C:5, RG:5, RT:5, K:5, P:5, LS:5
+  }
+} as const;
+
+const DEFAULT_THP_CFG = {
+  enabled: true,
+  cap_up_qb: 0.10,       // +10% max
+  cap_down_scale: 1.20,  // −12% max
+  pivot_qb: 91,          // league-average pivot
+  steps_up_qb: 6,        // 91 → 99 hits cap
+  steps_down_qb: 5       // 91 → 86 hits penalty cap
+} as const;
+
+function _posKey(pos: string): string {
+  const p = (pos || "").toUpperCase();
+  if (p === "RB") return "HB";
+  return p;
+}
+
+export function heightMultiplier(pos: string, heightInches: number | undefined | null, settings: Settings): number {
+  const cfg = settings.physical?.height ?? (DEFAULT_HEIGHT_CFG as any);
+  if (!cfg?.enabled) return 1.0;
+
+  const key = _posKey(pos);
+  const base = cfg.baselines_in[key];
+  const capUp = cfg.cap_up[key];
+  if (typeof base !== "number" || typeof capUp !== "number") return 1.0;
+
+  // If height not provided, use baseline (Δ = 0 → multiplier 1.0)
+  const hValid = typeof heightInches === "number" && Number.isFinite(heightInches);
+  const h = hValid ? (heightInches as number) : base;
+
+  const scale = (typeof cfg.cap_down_scale === "number" && cfg.cap_down_scale > 0) ? cfg.cap_down_scale : 1.4;
+  const capDown = (cfg.cap_down && typeof cfg.cap_down[key] === "number")
+    ? cfg.cap_down[key]!
+    : capUp * scale;
+
+  const N = (typeof cfg.inches_to_cap === "number" && cfg.inches_to_cap > 0) ? cfg.inches_to_cap : 4;
+
+  const slopeUp = (cfg.slope_up_per_in && typeof cfg.slope_up_per_in[key] === "number")
+    ? cfg.slope_up_per_in[key]!
+    : capUp / N;
+
+  const slopeDown = (cfg.slope_down_per_in && typeof cfg.slope_down_per_in[key] === "number")
+    ? cfg.slope_down_per_in[key]!
+    : capDown / N;
+
+  const d = h - base;
+  if (d >= 0) {
+    const bump = Math.min(capUp, d * slopeUp);
+    return Math.max(0.0, 1 + bump);
+  } else {
+    const pen = Math.min(capDown, Math.abs(d) * slopeDown);
+    return Math.max(0.0, 1 - pen);
+  }
+}
+
+export function speedMultiplier(pos: string, spd: number | undefined | null, settings: Settings): number {
+  const cfg = settings.physical?.speed ?? (DEFAULT_SPEED_CFG as any);
+  if (!cfg?.enabled) return 1.0;
+
+  const key = _posKey(pos);
+  const capUp = cfg.cap_up[key];
+  const pivot = cfg.pivot[key];
+  if (typeof capUp !== "number" || typeof pivot !== "number") return 1.0;
+
+  const scale = (typeof cfg.cap_down_scale === "number" && cfg.cap_down_scale > 0) ? cfg.cap_down_scale : 1.25;
+  const capDown = capUp * scale;
+
+  const stepsUp = (cfg.steps_up && typeof cfg.steps_up[key] === "number" && cfg.steps_up[key] > 0) ? cfg.steps_up[key] : 5;
+  const stepsDn = (cfg.steps_down && typeof cfg.steps_down[key] === "number" && cfg.steps_down[key] > 0) ? cfg.steps_down[key] : 5;
+
+  // If SPD missing, use pivot (neutral)
+  const sVal = (typeof spd === "number" && Number.isFinite(spd)) ? (spd as number) : pivot;
+
+  const d = sVal - pivot;
+  if (d >= 0) {
+    const bump = Math.min(capUp, (d/stepsUp) * capUp);
+    return Math.max(0.0, 1 + bump);
+  } else {
+    const pen = Math.min(capDown, (Math.abs(d)/stepsDn) * capDown);
+    return Math.max(0.0, 1 - pen);
+  }
+}
+
+export function thpMultiplier(pos: string, thp: number | undefined | null, settings: Settings): number {
+  const cfg = settings.physical?.thp ?? (DEFAULT_THP_CFG as any);
+  if (!cfg?.enabled) return 1.0;
+
+  const key = _posKey(pos);
+  if (key !== "QB") return 1.0;
+
+  const capUp = typeof cfg.cap_up_qb === "number" ? cfg.cap_up_qb : 0.10;
+  const capDown = capUp * (typeof cfg.cap_down_scale === "number" ? cfg.cap_down_scale : 1.20);
+  const pivot = typeof cfg.pivot_qb === "number" ? cfg.pivot_qb : 93;
+  const stepsUp = typeof cfg.steps_up_qb === "number" ? Math.max(1, cfg.steps_up_qb) : 6;
+  const stepsDn = typeof cfg.steps_down_qb === "number" ? Math.max(1, cfg.steps_down_qb) : 5;
+
+  const v = (typeof thp === "number" && Number.isFinite(thp)) ? (thp as number) : pivot; // optional → baseline
+  const d = v - pivot;
+  if (d >= 0) {
+    const bump = Math.min(capUp, (d / stepsUp) * capUp);
+    return Math.max(0, 1 + bump);
+  } else {
+    const pen = Math.min(capDown, (Math.abs(d) / stepsDn) * capDown);
+    return Math.max(0, 1 - pen);
+  }
+}
+
+// Age multiplier (with cliffs, gain, and floor)
+export function ageMult(age: number, pos: string, settings: Settings) {
+  const a = Math.max(20, Math.min(40, Math.floor(age)));
   const base = settings.age.base_schedule[String(a)] ?? 1.0;
 
-  // Relief dial (0.15 means "reduce penalty 15%" for 28+)
+  // Relief dial (e.g., 0.15 means reduce penalty 15% for 28+)
   const relief = Math.max(0, Math.min(0.5, settings.age.penalty_relief_over28 ?? 0));
 
   // Adjusted 28+ cliff: move toward 1.0 by 'relief' fraction of its penalty
-  const cliff28_raw = settings.age.cliff_28_plus ?? 1.0;        // e.g., 0.75
-  const cliff28_adj = 1 - (1 - cliff28_raw) * (1 - relief);     // e.g., 0.75 → 0.7875 @ relief=0.15
+  const cliff28_raw = settings.age.cliff_28_plus ?? 1.0;
+  const cliff28_adj = 1 - (1 - cliff28_raw) * (1 - relief);
 
-  const cliff = (a>=28) ? cliff28_adj
-             : (a>=25 && a<=27) ? (settings.age.cliff_25_27 ?? 1.0)
-             : 1.0;
+  const cliff =
+    a >= 28 ? cliff28_adj :
+    (a >= 25 && a <= 27) ? (settings.age.cliff_25_27 ?? 1.0) :
+    1.0;
 
   // 1) Gain around 1.0
   let m = 1 + (settings.age.gain ?? 4.0) * (base - 1);
 
-  // 2) Apply cliff (now using adjusted 28+)
+  // 2) Apply cliff
   m = m * cliff;
 
-  // 3) Post-29 geometric decay (anchor at 29), relief lightens the decay ratio
-  const decayEnabled = settings.age.post29_decay_enabled ?? true;
-  const startAge = settings.age.post29_start_age ?? 29;
-  const ratio_raw = settings.age.post29_decay_ratio ?? 0.82;     // drop per year = (1 - ratio_raw)
-  const ratio_adj = 1 - (1 - ratio_raw) * (1 - relief);          // e.g., 0.82 → 0.847 @ relief=0.15
+  // ---- Positional longevity knobs ----
+  const lon = settings.pos_longevity ?? {};
+  const startGlobal = settings.age.post29_start_age ?? 29;
+  const startOverride = lon.start_age?.[pos];
+  const startAge = Number.isFinite(startOverride as number) ? (startOverride as number) : startGlobal;
 
-  if (decayEnabled && a >= (startAge + 1)) {
-    // mStart at the anchor age (29) with the same rules
+  const ratioGlobal = settings.age.post29_decay_ratio ?? 0.82;
+  const scale = lon.ratio_scale?.[pos];
+  let ratioBase = ratioGlobal * (Number.isFinite(scale as number) ? (scale as number) : 1.0);
+  // clamp sane bounds on per-year retention
+  ratioBase = Math.max(0.60, Math.min(0.98, ratioBase));
+  // Apply the same relief logic toward 1.0
+  const ratio = 1 - (1 - ratioBase) * (1 - relief);
+
+  const floorGlobal = settings.age.floor_age ?? 40;
+  const floorOverride = lon.floor_age?.[pos];
+  const floorAge = Number.isFinite(floorOverride as number) ? (floorOverride as number) : floorGlobal;
+
+  // 3) Geometric decay from the positional start anchor
+  if ((settings.age.post29_decay_enabled ?? true) && a >= (startAge + 1)) {
     const baseStart = settings.age.base_schedule[String(startAge)] ?? 1.0;
-    const cliffStart = cliff28_adj; // 29 uses 28+ cliff
+    const cliffStart = startAge >= 28 ? cliff28_adj :
+      (startAge >= 25 && startAge <= 27) ? (settings.age.cliff_25_27 ?? 1.0) : 1.0;
     const mStart = (1 + (settings.age.gain ?? 4.0) * (baseStart - 1)) * cliffStart;
+
     const k = a - startAge;
-    m = mStart * Math.pow(ratio_adj, k);
+    m = mStart * Math.pow(ratio, k);
   }
 
-  // 4) Floor clamp (e.g., ≥ 40 → 0)
-  const floorAge = settings.age.floor_age ?? 40;
+  // 4) Floor clamp (per-pos overrides win)
   const floorValue = settings.age.floor_value ?? 0.0;
   if (a >= floorAge) m = floorValue;
 
@@ -295,7 +501,13 @@ async function getSettings(franchise_id?:string): Promise<Settings>{
     .limit(1)
     .maybeSingle();
   if (defErr || !def?.settings) throw new Error("settings_not_found");
-  return def.settings as Settings;
+  const s = def.settings as Settings;
+  // Merge default physical configs minimally
+  (s as any).physical = s.physical ?? {};
+  (s as any).physical.height = { ...(DEFAULT_HEIGHT_CFG as any), ...(s.physical?.height ?? {}) };
+  (s as any).physical.speed = { ...(DEFAULT_SPEED_CFG as any), ...(s.physical?.speed ?? {}) };
+  (s as any).physical.thp = { ...(DEFAULT_THP_CFG as any), ...(s.physical?.thp ?? {}) };
+  return s;
 }
 
 async function upsertSettings(payload:{franchise_id?:string; settings:Partial<Settings>}){
@@ -360,6 +572,22 @@ serve(async (req) => {
       return new Response("", { status: 204, headers: { "Access-Control-Allow-Origin":"*", "Access-Control-Allow-Methods":"GET,POST,PATCH,OPTIONS", "Access-Control-Allow-Headers":"Content-Type,Authorization" }});
     }
 
+    // GET/POST /pick-value  { pick: 1..224 }
+    if ((req.method === "GET" || req.method === "POST") && url.pathname.endsWith("/pick-value")){
+      let pickNum: number | undefined;
+      if (req.method === "GET"){
+        pickNum = Number(url.searchParams.get("pick"));
+      } else {
+        const body = await req.json().catch(() => ({}));
+        pickNum = Number(body.pick ?? body.Pick ?? body.p);
+      }
+      if (!(Number.isFinite(pickNum) && (pickNum as number) >= 1 && (pickNum as number) <= 224)){
+        return ok({ ok:false, error:"invalid_pick_1_224" }, 400);
+      }
+      const points = jjPickValue(pickNum as number);
+      return ok({ ok:true, pick: pickNum, points });
+    }
+
     // GET /settings?franchise_id=...
     if (req.method === "GET" && url.pathname.endsWith("/settings")){
       const fid = url.searchParams.get("franchise_id") ?? undefined;
@@ -378,6 +606,7 @@ serve(async (req) => {
     if (req.method === "POST" && url.pathname.endsWith("/compute")){
       const body = await req.json();
       const { ovr, age, pos, dev, franchise_id } = body ?? {};
+      const heightIn = Number(body.height_in ?? body.height_inches ?? body.heightIn ?? body.height);
       if (typeof ovr !== "number" || typeof age !== "number" || !pos || !dev){
         return ok({ ok:false, error:"invalid_payload" }, 400);
       }
@@ -390,7 +619,7 @@ serve(async (req) => {
 
       // Multipliers
       const mPos = posMult(pos, s);
-      const mAge = ageMult(age, s);
+      const mAge = ageMult(age, pos, s);
       const mYouth = youthBuffer(pos, age, s);
       const mDev = devTraitMult(pos, age, dev, s);
 
@@ -399,6 +628,20 @@ serve(async (req) => {
       // Ability Slot Multiplier (SS/XF only; net factor by threshold; age-tapered)
       const mAbility = abilitySlotMultiplier(ovr, age, dev, s);
       raw = raw * mAbility;
+
+      // Height multiplier
+      const mHeight = heightMultiplier(pos, Number.isFinite(heightIn) ? heightIn : undefined, s);
+      raw = raw * mHeight;
+
+      // Speed multiplier
+      const spd = Number(body.spd ?? body.speed ?? body.SPD);
+      const mSpeed = speedMultiplier(pos, Number.isFinite(spd) ? spd : undefined, s);
+      raw = raw * mSpeed;
+
+      // Throw Power (QB only)
+      const thp = Number(body.thp ?? body.throw_power ?? body.THROW_POWER ?? body.THP);
+      const mTHP = thpMultiplier(pos, Number.isFinite(thp) ? thp : undefined, s);
+      raw = raw * mTHP;
 
       let value = raw;
 
@@ -421,7 +664,7 @@ serve(async (req) => {
         details: {
           qb_base_value: qbVal,
           base_after_dividing_qb_mult: base,
-          multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev, ability:mAbility },
+          multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev, ability:mAbility, height:mHeight, speed:mSpeed, thp:mTHP },
           gravity: g
         }
       });

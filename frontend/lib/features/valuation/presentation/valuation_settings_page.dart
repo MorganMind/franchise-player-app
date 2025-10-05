@@ -62,6 +62,58 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
     return fallback;
   }
 
+  Widget _positionalLongevityCard(){
+    final positions = [
+      'QB','WR','CB','LE','RE','LOLB','ROLB','LT','RT','DT','FS','SS','TE','MLB','HB','LG','C','RG','K','P','LS'
+    ];
+    final ratioScale = _getMap(['pos_longevity','ratio_scale']);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Positional Longevity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            const Text('Decay Start Age (per position) and Floor Age (clamp to 0).'),
+            const SizedBox(height: 12),
+            ...positions.map((p){
+              final sAgeRaw = _getNum(['pos_longevity','start_age', p], fallback: double.nan);
+              final fAgeRaw = _getNum(['pos_longevity','floor_age', p], fallback: double.nan);
+              final sAge = sAgeRaw.isNaN ? 29 : sAgeRaw.toInt();
+              final fAge = fAgeRaw.isNaN ? 35 : fAgeRaw.toInt();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    Row(
+                      children: [
+                        Expanded(child: _intSliderRow(
+                          'Start', sAge, 25, 33,
+                          (v){ _setNum(['pos_longevity','start_age', p], v.toDouble()); }
+                        )),
+                        const SizedBox(width: 12),
+                        Expanded(child: _intSliderRow(
+                          'Floor', fAge, 30, 40,
+                          (v){ _setNum(['pos_longevity','floor_age', p], v.toDouble()); }
+                        )),
+                      ],
+                    ),
+                    // Optional ratio scale control (kept hidden by default)
+                    // _sliderRow('Decay ratio scale', _getNum(['pos_longevity','ratio_scale', p], fallback: 1.00), 0.80, 1.20, 0.01,
+                    //   (x){ final m = Map<String,dynamic>.from(ratioScale); m[p] = x; _setMap(['pos_longevity','ratio_scale'], m); }),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _setNum(List<String> path, double value) {
     Map<String, dynamic> cur = _settings!;
     for (int i = 0; i < path.length - 1; i++) {
@@ -218,6 +270,8 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
           _youthBufferCard(),
           const SizedBox(height: 12),
           _devTraitCard(),
+          const SizedBox(height: 12),
+          _positionalLongevityCard(),
           const SizedBox(height: 12),
           _abilitySlotsCard(),
           const SizedBox(height: 12),
