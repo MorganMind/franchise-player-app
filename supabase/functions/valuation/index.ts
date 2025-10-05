@@ -90,7 +90,8 @@ export function qbValueFromOVR(ovr:number, settings:Settings){
   const jj1 = jjPickValue(1), jj224 = jjPickValue(224);
   const g0 = (jjPickValue(p) - jj224) / (jj1 - jj224); // ∈[0,1]
   const gamma = settings.ovr_curve.gamma ?? 1.0;
-  const g = Math.pow(Math.max(0, Math.min(1, g0)), gamma);
+  // FIXED: gamma > 1 should lift high OVRs, so we use 1/gamma to invert the curve
+  const g = Math.pow(Math.max(0, Math.min(1, g0)), 1/gamma);
   return qb60 + (qb99 - qb60) * g;
 }
 
