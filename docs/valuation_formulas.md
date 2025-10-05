@@ -129,7 +129,24 @@ See `supabase/functions/valuation/index.ts`:
 
 ---
 
-## 8) Common Pitfalls
+## 8) Future Pick Discount (Madden limit: 2 years)
+
+We price future picks off a **round baseline** and a **non-compounding schedule** (your league rule):
+
+- **Round 1:** 25% discount next year (×0.75), 50% in 2 years (×0.50)
+- **Round 2:** 20% (×0.80), then 40% (×0.60)
+- **Round 3:** 15% (×0.85), then 30% (×0.70)
+- **Round 4/5:** 10% (×0.90), then 20% (×0.80)
+- **Round 6/7:** 5% (×0.95), then 10% (×0.90)
+
+Baseline pick is **mid-round** by default (R1→16, R2→48, R3→80, R4→112, R5→144, R6→176, R7→208) or **projected** if provided.
+
+API:
+- `POST /pick` with `{ round, years_out, projected_pick? }` returns `{ value(points), nearest_pick, nearest_points }`.
+
+---
+
+## 9) Common Pitfalls
 - **Not linear:** OVR curve uses **reverse JJ**, not a line.
 - **Cliffs before gain:** `AgeMult` multiplies cliff first, then applies `gain`.
 - **Floor at 35+:** With defaults, **35+ clamps to 0** (no negative values).

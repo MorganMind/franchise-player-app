@@ -80,6 +80,21 @@ select 'default', '{
       }
     },
 
-    "gravity": { "enabled": true, "threshold": 6000, "vmax": 18000 }
+    "gravity": { "enabled": true, "threshold": 6000, "vmax": 18000 },
+
+    "future_picks": {
+      "enabled": true,
+      "baseline": "mid_round",
+      "mid_round_picks": { "1":16, "2":48, "3":80, "4":112, "5":144, "6":176, "7":208 },
+      "schedule": {
+        "1": { "1": 0.75, "2": 0.50 },
+        "2": { "1": 0.80, "2": 0.60 },
+        "3": { "1": 0.85, "2": 0.70 },
+        "4": { "1": 0.90, "2": 0.80 },
+        "5": { "1": 0.90, "2": 0.80 },
+        "6": { "1": 0.95, "2": 0.90 },
+        "7": { "1": 0.95, "2": 0.90 }
+      }
+    }
   }'::jsonb
 where not exists (select 1 from public.valuation_settings);

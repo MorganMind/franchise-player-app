@@ -39,6 +39,12 @@ type Settings = {
     weights: Record<string, { w_xp: number; w_abil: number }>;
   };
   gravity?: { enabled: boolean; threshold: number; vmax: number };
+  future_picks?: {
+    enabled: boolean;
+    baseline: "mid_round" | "projected";
+    mid_round_picks: Record<string, number>;
+    schedule: Record<string, Record<string, number>>;
+  };
 };
 
 export function jjPickValue(pick: number): number {
@@ -98,6 +104,54 @@ function softCap(V: number, T: number, Vmax: number) {
   return Math.min(out, Vmax);
 }
 export { softCap }; // for tests
+
+// Future pick helpers
+function roundRange(roundNum: number): { start: number; end: number } {
+  const r = Math.max(1, Math.min(7, Math.floor(roundNum)));
+  const start = (r - 1) * 32 + 1;
+  const end = r * 32;
+  return { start, end };
+}
+
+function baselinePickForRound(roundNum: number, settings: Settings, projected_pick?: number): number {
+  const { start, end } = roundRange(roundNum);
+  const fp = settings.future_picks!;
+  if ((fp.baseline ?? "mid_round") === "projected" && projected_pick) {
+    // snap into round range if caller gives a projected pick in that round
+    const p = Math.max(start, Math.min(end, Math.floor(projected_pick)));
+    return p;
+    // NOTE: If a projected pick outside the round is given, we clamp to the round boundaries.
+  }
+  // mid-round anchor (configurable per round)
+  const mid = fp.mid_round_picks?.[String(roundNum)];
+  if (typeof mid === "number") return Math.max(start, Math.min(end, Math.floor(mid)));
+  // fallback: exact mid of the round
+  return Math.floor((start + end) / 2);
+}
+
+function futurePickFactor(roundNum: number, years_out: number, settings: Settings): number {
+  const k = Math.max(0, Math.min(2, Math.floor(years_out))); // Madden limit
+  if (k === 0) return 1.0;
+  const sched = settings.future_picks?.schedule ?? {};
+  const row = sched[String(roundNum)] ?? {};
+  const f = row[String(k)];
+  if (typeof f === "number" && f > 0) return f;
+  // default conservative fallback if not found
+  return k === 1 ? 0.85 : 0.70;
+}
+
+export function computeFuturePickPoints(
+  roundNum: number,
+  years_out: number,
+  settings: Settings,
+  projected_pick?: number
+) {
+  const p0 = baselinePickForRound(roundNum, settings, projected_pick);
+  const basePts = jjPickValue(p0);
+  const factor = futurePickFactor(roundNum, years_out, settings);
+  const points = basePts * factor;
+  return { points, baseline_pick: p0, factor, base_points: basePts };
+}
 
 // Age multiplier (with cliffs, gain, and floor)
 export function ageMult(age:number, settings:Settings){
@@ -306,6 +360,42 @@ serve(async (req) => {
           multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev },
           gravity: g
         }
+      });
+    }
+
+    // POST /pick  { round: 1..7, years_out: 0|1|2, projected_pick?: number }
+    if (req.method === "POST" && url.pathname.endsWith("/pick")) {
+      const body = await req.json().catch(() => ({}));
+      const roundNum = Number(body.round);
+      const yearsOut = Number(body.years_out ?? body.yearsOut ?? 0);
+      const projected = body.projected_pick ?? body.projectedPick;
+
+      if (!(roundNum >= 1 && roundNum <= 7)) {
+        return ok({ ok:false, error:"invalid_round" }, 400);
+      }
+      if (!(yearsOut >= 0 && yearsOut <= 2)) {
+        return ok({ ok:false, error:"invalid_years_out_madden_limit_0_2" }, 400);
+      }
+
+      const s = await getSettings(body.franchise_id ?? body.franchiseId ?? undefined);
+      if (!s.future_picks?.enabled) {
+        return ok({ ok:false, error:"future_picks_disabled" }, 400);
+      }
+
+      const calc = computeFuturePickPoints(roundNum, yearsOut, s, projected ? Number(projected) : undefined);
+      const nearest = nearestPick(calc.points);
+      return ok({
+        ok: true,
+        round: roundNum,
+        years_out: yearsOut,
+        baseline_pick: calc.baseline_pick,
+        factor: calc.factor,
+        base_points: calc.base_points,
+        value: calc.points,
+        nearest_pick: nearest.pick,
+        pick_in_round: nearest.pick_in_round,
+        round_of_nearest: nearest.round,
+        nearest_points: nearest.points
       });
     }
 
