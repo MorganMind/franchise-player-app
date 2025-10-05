@@ -3,9 +3,10 @@
  * V = BaseJJ(OVR) × PosMult(pos) × AgeMult(age) × YouthBuffer(pos, age) × DevTraitMult(pos, age, trait)
  *
  * AgeMult ORDER (important):
- *   m = base_schedule[age] * cliff_mod(age)
- *   AgeMult = max(0, 1 + gain * (m - 1))
- *   if (age >= floor_age) AgeMult = floor_value
+ *   m = 1 + gain * (base_schedule[age] - 1)
+ *   m = m * cliff_mod(age)
+ *   if (age >= floor_age) m = floor_value
+ *   return max(0, m)
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
@@ -92,11 +93,16 @@ export function ageMult(age:number, settings:Settings){
   const cliff = (a>=28) ? settings.age.cliff_28_plus
                : (a>=25 && a<=27) ? settings.age.cliff_25_27
                : 1.0;
-  let m = base * cliff;
-  // "gain" doubles/quadruples effect around 1.0: m' = 1 + gain*(m-1)
-  m = 1 + settings.age.gain * (m - 1);
-  // clamp by floor age
+
+  // NEW ORDER: apply gain FIRST (around 1.0), THEN apply cliff
+  // This keeps a real 28+ penalty but avoids zeroing typical ages.
+  let m = 1 + settings.age.gain * (base - 1);
+  m = m * cliff;
+
+  // Floor (e.g., age ≥35 → 0 by default)
   if (a >= settings.age.floor_age) m = settings.age.floor_value;
+
+  // Never return negatives
   return Math.max(0, m);
 }
 

@@ -62,32 +62,25 @@ Default `pos_spread_scalar = 1.5`. Example:
 ## 3) Age Multiplier (order matters)
 Age follows this **exact** sequence:
 
-1) **Base schedule** (from settings): e.g.  
-   `20:2.00, 21:2.00, 22:1.90, 23:1.80, 24:1.70, 25:1.60, 26:1.50, 27:1.40, 28:1.00, 29:1.00, 30:0.95, …`
+1) **Start from base schedule**: `base = base_schedule[age]`  
+   e.g. `20:2.00, 21:2.00, 22:1.90, 23:1.80, 24:1.70, 25:1.60, 26:1.50, 27:1.40, 28:1.00, 29:1.00, 30:0.95, …`
 
-2) **Cliff modifier**:
+2) **Apply gain around 1.0**: `m = 1 + gain * (base - 1)`
 
-cliff_mod(age) = (25–27) ? cliff_25_27 :
-(age ≥ 28) ? cliff_28_plus :
-1.0
+3) **Apply cliff**: `m = m * cliff_mod(age)`  
+   where `cliff_mod(age) = (25–27) ? cliff_25_27 : (age ≥ 28) ? cliff_28_plus : 1.0`
 
-Defaults: `cliff_25_27 = 0.90`, `cliff_28_plus = 0.75`.
+4) **Floor/clamp**: `if age ≥ floor_age → m = floor_value`; finally `m = max(0, m)`
 
-3) **Multiply**, then **apply gain around 1.0**:
+Defaults: `gain = 4.0`, `cliff_25_27 = 0.90`, `cliff_28_plus = 0.75`, `floor_age = 35`, `floor_value = 0`.
 
-m = base_schedule[age] * cliff_mod(age)
-AgeMult(age) = max( 0, 1 + gain * (m - 1) )
+**Examples:**
+- With `gain=4.0`, `base(28)=1.00`, `cliff_28_plus=0.75`:  
+  `m = (1 + 4*(1−1)) * 0.75 = 0.75`
+- With `base(30)=0.95`:  
+  `m = (1 + 4*(0.95−1)) * 0.75 = 0.80 * 0.75 = 0.60`
 
-Default: `gain = 4.0`.  
-(This is why age 28 with cliff_28_plus=0.75 becomes 0: `1 + 4*(0.75−1) = 0`.)
-
-4) **Floor clamp**:
-
-if (age ≥ floor_age) AgeMult = floor_value
-
-Defaults: `floor_age = 35`, `floor_value = 0`.
-
-> This section is the most common source of confusion. The **cliffs are applied before gain**, and then the gain amplifies deviation from 1.0.
+> This order keeps a real 28+ penalty but avoids zeroing typical ages. The **gain is applied first**, then the cliff modifier.
 
 ---
 
