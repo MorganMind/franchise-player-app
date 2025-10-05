@@ -5,17 +5,14 @@ services:
     staticPublishPath: frontend/build/web
     routes:
       - type: rewrite
-        source: /api/*
-        destination: /index.html
-      - type: rewrite
         source: /assets/*
-        destination: /index.html
+        destination: /assets/*
       - type: rewrite
         source: /canvaskit/*
-        destination: /index.html
+        destination: /canvaskit/*
       - type: rewrite
         source: /icons/*
-        destination: /index.html
+        destination: /icons/*
       - type: rewrite
         source: /manifest.json
         destination: /manifest.json
