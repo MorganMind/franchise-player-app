@@ -14,6 +14,7 @@ import '../../features/settings/presentation/settings_page.dart';
 import '../../features/home/presentation/home_welcome_page.dart';
 import '../../features/voice/presentation/voice_channel_page.dart';
 import '../../features/valuation/presentation/valuation_settings_page.dart';
+import '../../debug_oauth.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -100,6 +101,10 @@ class AppRouter {
             franchiseId: franchiseId,
           );
         },
+      ),
+      GoRoute(
+        path: '/debug-oauth',
+        builder: (context, state) => const DebugOAuthPage(),
       ),
       GoRoute(
         path: '/voice/:channelId',
