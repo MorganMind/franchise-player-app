@@ -22,7 +22,7 @@ select 'default', '{
     "DT":0.40, "FS":0.45, "SS":0.45, "TE":0.40,
     "LG":0.35, "C":0.35, "RG":0.35, "HB":0.35, "MLB":0.30,
     "FB":0.20, "K":0.15, "P":0.10, "LS":0.00,
-    "RB":0.35, "Tackle":0.50, "Guard":0.35, "Edge":0.60, "Safety":0.45, "LB":0.30
+    "RB":0.35, "Tackle":0.50, "OT":0.50, "Guard":0.35, "Edge":0.60, "Safety":0.45, "LB":0.30, "Sam":0.30, "WILL":0.30
   },
 
   "ovr_curve": { "qb60": 2.5, "qb99": 6000, "gamma": 1.15 },
@@ -46,17 +46,17 @@ select 'default', '{
       "QB":0.20, "WR":0.14, "CB":0.14, "LE":0.14, "RE":0.14, "LOLB":0.14, "ROLB":0.14,
       "LT":0.10, "RT":0.10, "DT":0.10, "FS":0.10, "SS":0.10, "TE":0.10,
       "MLB":0.08, "HB":0.08, "LG":0.06, "C":0.06, "RG":0.06, "K":0.03, "P":0.02, "LS":0.00,
-      "RB":0.08, "Tackle":0.10, "Guard":0.06, "Edge":0.14, "Safety":0.10, "LB":0.08
+      "RB":0.08, "Tackle":0.10, "OT":0.10, "Guard":0.06, "Edge":0.14, "Safety":0.10, "LB":0.08, "Sam":0.08, "WILL":0.08
     }
   },
 
   "dev_trait": {
-    "trait_scores": { "Normal":0.00, "Star":2.64, "Superstar":5.36, "X-Factor":8.00 },
+    "trait_scores": { "Normal":0.00, "N":0.00, "Star":2.64, "S":2.64, "Superstar":5.36, "Super Star":5.36, "X-Factor":8.00, "XF":8.00, "xfactor":8.00, "x factor":8.00 },
     "dcap": {
       "QB":0.20, "WR":0.14, "CB":0.14, "LE":0.14, "RE":0.14, "LOLB":0.14, "ROLB":0.14,
       "LT":0.10, "RT":0.10, "DT":0.10, "FS":0.10, "SS":0.10, "TE":0.10,
       "MLB":0.08, "HB":0.08, "IOL":0.06, "LG":0.06, "C":0.06, "RG":0.06, "K":0.03, "P":0.02, "LS":0.00,
-      "RB":0.08, "Tackle":0.10, "Guard":0.06, "Edge":0.14, "Safety":0.10, "LB":0.08
+      "RB":0.08, "Tackle":0.10, "OT":0.10, "Guard":0.06, "Edge":0.14, "Safety":0.10, "LB":0.08, "Sam":0.08, "WILL":0.08
     },
     "weights": {
       "QB": {"w_xp":0.50,"w_abil":0.50},
@@ -83,10 +83,13 @@ select 'default', '{
       "LS": {"w_xp":1.00,"w_abil":0.00},
       "RB": {"w_xp":0.70,"w_abil":0.30},
       "Tackle": {"w_xp":0.65,"w_abil":0.35},
+      "OT": {"w_xp":0.65,"w_abil":0.35},
       "Guard": {"w_xp":0.80,"w_abil":0.20},
       "Edge": {"w_xp":0.50,"w_abil":0.50},
       "Safety": {"w_xp":0.65,"w_abil":0.35},
-      "LB": {"w_xp":0.70,"w_abil":0.30}
+      "LB": {"w_xp":0.70,"w_abil":0.30},
+      "Sam": {"w_xp":0.70,"w_abil":0.30},
+      "WILL": {"w_xp":0.70,"w_abil":0.30}
     }
     },
 
