@@ -32,7 +32,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     try {
       await supabase.auth.signInWithOtp(
         email: _emailController.text,
-        emailRedirectTo: 'http://localhost:3000',
+        emailRedirectTo: 'https://franchise-player-app.onrender.com',
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

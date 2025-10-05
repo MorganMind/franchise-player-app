@@ -11,5 +11,16 @@ void main() async {
   setUrlStrategy(PathUrlStrategy());
   
   await initSupabase();
+  
+  // Handle OAuth callbacks
+  supabase.auth.onAuthStateChange.listen((data) {
+    print('🔐 Auth state changed: ${data.event}');
+    if (data.event == AuthChangeEvent.signedIn) {
+      print('✅ User signed in successfully');
+    } else if (data.event == AuthChangeEvent.signedOut) {
+      print('👋 User signed out');
+    }
+  });
+  
   runApp(const ProviderScope(child: FranchisePlayerApp()));
 } 
