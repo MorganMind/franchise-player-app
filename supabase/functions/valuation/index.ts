@@ -42,6 +42,12 @@ type Settings = {
     dcap: Record<string, number>;
     weights: Record<string, { w_xp: number; w_abil: number }>;
   };
+  ability_slots?: {
+    enabled: boolean;
+    thresholds: Record<string, number>;  // "75","80","85","90","95" → net factors
+    xf_fourth_at?: number;               // default 95
+    age_band: Record<string, number>;    // 20..40 → 0..1 taper (younger ~1.0)
+  };
   gravity?: { enabled: boolean; threshold: number; vmax: number };
   future_picks?: {
     enabled: boolean;
@@ -230,6 +236,47 @@ export function devTraitMult(pos:string, age:number, trait:string, settings:Sett
   return 1 + dcap * (w.w_xp * devBand + w.w_abil) * tScore;
 }
 
+// Ability Slot Multiplier (SS/XF only; net factor by threshold; age-tapered)
+export function abilitySlotMultiplier(
+  ovr: number,
+  age: number,
+  dev: string,
+  settings: Settings
+): number {
+  const cfg = settings.ability_slots;
+  if (!cfg?.enabled) return 1.0;
+
+  // Only Superstar & X-Factor have ability boosts
+  if (dev !== "Superstar" && dev !== "X-Factor") return 1.0;
+
+  // Pick the highest unlocked threshold (net factor, not cumulative)
+  const thr = cfg.thresholds || {};
+  const xfOnlyAt = cfg.xf_fourth_at ?? 95;
+
+  // Determine candidate thresholds unlocked
+  const unlocked:number[] = [];
+  if (ovr >= 75) unlocked.push(75);
+  if (ovr >= 80) unlocked.push(80);
+  if (ovr >= 85) unlocked.push(85);
+  if (ovr >= 90) unlocked.push(90);
+  if (dev === "X-Factor" && ovr >= xfOnlyAt) unlocked.push(xfOnlyAt);
+
+  if (unlocked.length === 0) return 1.0;
+
+  // Highest threshold wins
+  const top = String(Math.max(...unlocked));
+  let net = thr[top];
+  if (typeof net !== "number" || net <= 0) return 1.0;
+
+  // Age taper: 1 + (net-1) * taper(age)
+  const a = Math.max(20, Math.min(40, Math.floor(age)));
+  const taper = cfg.age_band[String(a)];
+  const ageTaper = (typeof taper === "number") ? Math.max(0, Math.min(1, taper)) : 1.0;
+
+  const eff = 1 + (net - 1) * ageTaper;
+  return Math.max(0.0, eff);
+}
+
 async function getSettings(franchise_id?:string): Promise<Settings>{
   // Try franchise row, else fall back to default
   if (franchise_id){
@@ -347,10 +394,15 @@ serve(async (req) => {
       const mYouth = youthBuffer(pos, age, s);
       const mDev = devTraitMult(pos, age, dev, s);
 
-      let value = base * mPos * mAge * mYouth * mDev;
+      let raw = base * mPos * mAge * mYouth * mDev;
 
-      // ---- Global Gravity (soft cap) ----
-      // Defaults: enabled, threshold=6000, vmax=18000
+      // Ability Slot Multiplier (SS/XF only; net factor by threshold; age-tapered)
+      const mAbility = abilitySlotMultiplier(ovr, age, dev, s);
+      raw = raw * mAbility;
+
+      let value = raw;
+
+      // ---- Gravity (soft cap) ----
       const g = s.gravity ?? { enabled: true, threshold: 6000, vmax: 18000 };
       if (g.enabled) {
         const T = Number.isFinite(g.threshold) ? g.threshold : 6000;
@@ -369,7 +421,7 @@ serve(async (req) => {
         details: {
           qb_base_value: qbVal,
           base_after_dividing_qb_mult: base,
-          multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev },
+          multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev, ability:mAbility },
           gravity: g
         }
       });

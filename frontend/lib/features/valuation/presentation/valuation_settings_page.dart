@@ -219,6 +219,8 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
           const SizedBox(height: 12),
           _devTraitCard(),
           const SizedBox(height: 12),
+          _abilitySlotsCard(),
+          const SizedBox(height: 12),
           _previewCard(),
           const SizedBox(height: 24),
         ],
@@ -424,6 +426,65 @@ class _ValuationSettingsPageState extends State<ValuationSettingsPage> {
                 _setMap(['dev_trait','weights'], nw);
               });
             }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _abilitySlotsCard() {
+    final ability = _getMap(['ability_slots']);
+    final abilityEnabled = (ability['enabled'] ?? true) == true;
+    final thresholds = _getMap(['ability_slots','thresholds']);
+    final xfFourthAt = _getNum(['ability_slots','xf_fourth_at'], fallback: 95).toInt();
+    final ageBand = _getMap(['ability_slots','age_band']);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Ability Slots (SS/XF only) — net multipliers', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Enabled'),
+              value: abilityEnabled,
+              onChanged: (v){ 
+                final n=Map<String,dynamic>.from(ability); 
+                n['enabled']=v; 
+                _setMap(['ability_slots'], n); 
+              },
+              contentPadding: EdgeInsets.zero,
+            ),
+            _intSliderRow('XF fourth slot at OVR', xfFourthAt, 90, 99, (v)=>_setNum(['ability_slots','xf_fourth_at'], v.toDouble())),
+            const SizedBox(height: 8),
+            const Text('Net Multipliers by OVR (highest unlocked applies)'),
+            _sliderRow('75 →', _getNum(['ability_slots','thresholds','75'], fallback: 1.03), 1.00, 1.30, 0.01, (v)=>_setNum(['ability_slots','thresholds','75'], v)),
+            _sliderRow('80 →', _getNum(['ability_slots','thresholds','80'], fallback: 1.06), 1.00, 1.30, 0.01, (v)=>_setNum(['ability_slots','thresholds','80'], v)),
+            _sliderRow('85 →', _getNum(['ability_slots','thresholds','85'], fallback: 1.09), 1.00, 1.30, 0.01, (v)=>_setNum(['ability_slots','thresholds','85'], v)),
+            _sliderRow('90 →', _getNum(['ability_slots','thresholds','90'], fallback: 1.12), 1.00, 1.30, 0.01, (v)=>_setNum(['ability_slots','thresholds','90'], v)),
+            _sliderRow('95 → (XF only)', _getNum(['ability_slots','thresholds','95'], fallback: 1.15), 1.00, 1.30, 0.01, (v)=>_setNum(['ability_slots','thresholds','95'], v)),
+            const Divider(height: 24),
+            const Text('Age taper (multiplier of the extra boost)'),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              children: List.generate(21, (i){
+                final a = 20 + i;
+                final val = (ageBand['$a'] ?? 1.0) as num;
+                return ActionChip(
+                  label: Text('$a: ${val.toStringAsFixed(2)}'),
+                  onPressed: () async {
+                    final nv = await _promptNumber(context, title:'Age $a Taper (0..1)', initial: val.toDouble(), min: 0.0, max: 1.0, step: 0.01);
+                    if (nv != null) { 
+                      final nb=Map<String,dynamic>.from(ageBand); 
+                      nb['$a']=nv; 
+                      _setMap(['ability_slots','age_band'], nb); 
+                    }
+                  },
+                );
+              }),
+            ),
           ],
         ),
       ),

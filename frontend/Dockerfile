@@ -4,7 +4,7 @@ FROM ghcr.io/cirruslabs/flutter:stable
 # Set working directory
 WORKDIR /app
 
-# Copy pubspec files
+# Copy pubspec files first for better caching
 COPY pubspec.yaml pubspec.lock ./
 
 # Get dependencies
@@ -13,8 +13,9 @@ RUN flutter pub get
 # Copy source code
 COPY . .
 
-# Build for web
-RUN flutter build web --release
+# Enable web support and build
+RUN flutter config --enable-web
+RUN flutter build web --release --web-renderer canvaskit
 
 # Use nginx to serve the built files
 FROM nginx:alpine
