@@ -4,9 +4,13 @@ create table if not exists public.valuation_settings (
   franchise_id uuid references public.franchises(id) on delete cascade,
   label text default 'default',
   settings jsonb not null,
-  updated_at timestamptz default now(),
-  unique (coalesce(franchise_id, '00000000-0000-0000-0000-000000000000'::uuid), label)
+  updated_at timestamptz default now()
 );
+
+-- Add unique constraint separately
+alter table public.valuation_settings 
+add constraint valuation_settings_unique_franchise_label 
+unique (franchise_id, label);
 
 -- Seed one global default row if empty
 insert into public.valuation_settings (label, settings)
