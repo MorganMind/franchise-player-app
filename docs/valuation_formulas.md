@@ -63,7 +63,7 @@ Default `pos_spread_scalar = 1.5`. Example:
 Age follows this **exact** sequence:
 
 1) **Start from base schedule**: `base = base_schedule[age]`  
-   e.g. `20:2.00, 21:2.00, 22:1.90, 23:1.80, 24:1.70, 25:1.60, 26:1.50, 27:1.40, 28:1.00, 29:1.00, 30:0.95, …`
+   e.g. `20:2.00, 21:2.00, 22:1.90, 23:1.80, 24:1.70, 25:1.60, 26:1.50, 27:1.40, 28:1.00, 29:0.95, 30:0.90, 31:0.85, 32:0.80, 33:0.75, 34:0.70, 35:0.65, 36:0.60, 37:0.55, 38:0.50, 39:0.45, 40:0.40`
 
 2) **Apply gain around 1.0**: `m = 1 + gain * (base - 1)`
 
@@ -72,13 +72,15 @@ Age follows this **exact** sequence:
 
 4) **Floor/clamp**: `if age ≥ floor_age → m = floor_value`; finally `m = max(0, m)`
 
-Defaults: `gain = 4.0`, `cliff_25_27 = 0.90`, `cliff_28_plus = 0.75`, `floor_age = 35`, `floor_value = 0`.
+Defaults: `gain = 4.0`, `cliff_25_27 = 0.90`, `cliff_28_plus = 0.85`, `floor_age = 40`, `floor_value = 0`.
 
 **Examples:**
-- With `gain=4.0`, `base(28)=1.00`, `cliff_28_plus=0.75`:  
-  `m = (1 + 4*(1−1)) * 0.75 = 0.75`
-- With `base(30)=0.95`:  
-  `m = (1 + 4*(0.95−1)) * 0.75 = 0.80 * 0.75 = 0.60`
+- With `gain=4.0`, `base(28)=1.00`, `cliff_28_plus=0.85`:  
+  `m = (1 + 4*(1−1)) * 0.85 = 0.85`
+- With `base(30)=0.90`:  
+  `m = (1 + 4*(0.90−1)) * 0.85 = 0.60 * 0.85 = 0.51`
+- With `base(35)=0.65`:  
+  `m = (1 + 4*(0.65−1)) * 0.85 = 0.40 * 0.85 = 0.34`
 
 > This order keeps a real 28+ penalty but avoids zeroing typical ages. The **gain is applied first**, then the cliff modifier.
 
