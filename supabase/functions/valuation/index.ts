@@ -38,6 +38,7 @@ type Settings = {
     dcap: Record<string, number>;
     weights: Record<string, { w_xp: number; w_abil: number }>;
   };
+  gravity?: { enabled: boolean; threshold: number; vmax: number };
 };
 
 export function jjPickValue(pick: number): number {
@@ -86,6 +87,17 @@ export function posMult(pos:string, settings:Settings){
   const o = settings.pos_offsets[pos] ?? 0;
   return 1 + settings.pos_spread_scalar * o;
 }
+
+// Soft cap (gravity) function
+function softCap(V: number, T: number, Vmax: number) {
+  if (!Number.isFinite(V) || V <= 0) return 0;
+  if (V <= T) return V;
+  const C = Math.max(1, Vmax - T);
+  const d = V - T;
+  const out = T + C * (1 - Math.exp(-d / C));
+  return Math.min(out, Vmax);
+}
+export { softCap }; // for tests
 
 // Age multiplier (with cliffs, gain, and floor)
 export function ageMult(age:number, settings:Settings){
@@ -269,7 +281,16 @@ serve(async (req) => {
       const mYouth = youthBuffer(pos, age, s);
       const mDev = devTraitMult(pos, age, dev, s);
 
-      const value = base * mPos * mAge * mYouth * mDev;
+      let value = base * mPos * mAge * mYouth * mDev;
+
+      // ---- Global Gravity (soft cap) ----
+      // Defaults: enabled, threshold=6000, vmax=18000
+      const g = s.gravity ?? { enabled: true, threshold: 6000, vmax: 18000 };
+      if (g.enabled) {
+        const T = Number.isFinite(g.threshold) ? g.threshold : 6000;
+        const Vmax = Number.isFinite(g.vmax) ? g.vmax : 18000;
+        value = softCap(value, T, Vmax);
+      }
 
       const nearest = nearestPick(value);
       return ok({
@@ -282,7 +303,8 @@ serve(async (req) => {
         details: {
           qb_base_value: qbVal,
           base_after_dividing_qb_mult: base,
-          multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev }
+          multipliers: { pos:mPos, age:mAge, youth:mYouth, dev:mDev },
+          gravity: g
         }
       });
     }

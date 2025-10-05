@@ -77,7 +77,9 @@ select 'default', '{
       "K":  {"w_xp":0.90,"w_abil":0.10},
       "P":  {"w_xp":0.90,"w_abil":0.10},
       "LS": {"w_xp":1.00,"w_abil":0.00}
-    }
-  }
-}'::jsonb
+      }
+    },
+
+    "gravity": { "enabled": true, "threshold": 6000, "vmax": 18000 }
+  }'::jsonb
 where not exists (select 1 from public.valuation_settings);
