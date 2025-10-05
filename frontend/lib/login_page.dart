@@ -75,6 +75,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         await supabase.auth.signInWithOAuth(
           OAuthProvider.discord,
           authScreenLaunchMode: LaunchMode.externalApplication,
+          redirectTo: 'https://franchise-player-app.onrender.com',
         );
         print('🔐 OAuth request sent successfully');
       } catch (e) {
