@@ -1,3 +1,13 @@
+/**
+ * Valuation pipeline (canonical; matches docs/valuation_formulas.md):
+ * V = BaseJJ(OVR) × PosMult(pos) × AgeMult(age) × YouthBuffer(pos, age) × DevTraitMult(pos, age, trait)
+ *
+ * AgeMult ORDER (important):
+ *   m = base_schedule[age] * cliff_mod(age)
+ *   AgeMult = max(0, 1 + gain * (m - 1))
+ *   if (age >= floor_age) AgeMult = floor_value
+ */
+
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -28,7 +38,7 @@ type Settings = {
   };
 };
 
-function jjPickValue(pick: number): number {
+export function jjPickValue(pick: number): number {
   // Classic JJ chart (programmatic)
   const r1=[3000,2600,2200,1800,1700,1600,1500,1400,1350,1300,1250,1200,1150,1100,1050,1000,950,900,875,850,800,780,760,740,720,700,680,660,640,620,600,590];
   if (pick<1) pick=1; if (pick>224) pick=224;
@@ -47,7 +57,7 @@ function jjPickValue(pick: number): number {
   return 2;
 }
 
-function nearestPick(points: number){
+export function nearestPick(points: number){
   let bestPick=224, bestDiff=Infinity, bestVal=2;
   for (let p=1;p<=224;p++){
     const v=jjPickValue(p);
@@ -60,7 +70,7 @@ function nearestPick(points: number){
 }
 
 // Reverse JJ OVR → QB value with anchors qb60,qb99
-function qbValueFromOVR(ovr:number, settings:Settings){
+export function qbValueFromOVR(ovr:number, settings:Settings){
   const { qb60, qb99 } = settings.ovr_curve;
   const t = Math.max(0, Math.min(1, (ovr-60)/39));
   const p = Math.round(224 - t*223); // 60→224, 99→1
@@ -70,13 +80,13 @@ function qbValueFromOVR(ovr:number, settings:Settings){
 }
 
 // Position multiplier
-function posMult(pos:string, settings:Settings){
+export function posMult(pos:string, settings:Settings){
   const o = settings.pos_offsets[pos] ?? 0;
   return 1 + settings.pos_spread_scalar * o;
 }
 
 // Age multiplier (with cliffs, gain, and floor)
-function ageMult(age:number, settings:Settings){
+export function ageMult(age:number, settings:Settings){
   const a = Math.max(20, Math.min(40, Math.floor(age)));
   const base = settings.age.base_schedule[String(a)] ?? 1.0;
   const cliff = (a>=28) ? settings.age.cliff_28_plus
@@ -91,7 +101,7 @@ function ageMult(age:number, settings:Settings){
 }
 
 // Youth growth buffer (per-position, age banded)
-function youthBuffer(pos:string, age:number, settings:Settings){
+export function youthBuffer(pos:string, age:number, settings:Settings){
   const a = Math.max(20, Math.min(28, Math.floor(age)));
   const band = settings.youth_buffer.band[String(a)] ?? 0;
   const dmax = settings.youth_buffer.dmax[pos] ?? 0;
@@ -99,7 +109,7 @@ function youthBuffer(pos:string, age:number, settings:Settings){
 }
 
 // Dev trait multiplier (position-aware, XP vs abilities, age-banded XP)
-function devTraitMult(pos:string, age:number, trait:string, settings:Settings){
+export function devTraitMult(pos:string, age:number, trait:string, settings:Settings){
   const tScore = settings.dev_trait.trait_scores[trait] ?? 0;
   const dcap = settings.dev_trait.dcap[pos] ?? settings.dev_trait.dcap["IOL"] ?? 0;
   const w = settings.dev_trait.weights[pos] ?? { w_xp:0.5, w_abil:0.5 };
