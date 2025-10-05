@@ -3,9 +3,10 @@
  * V = BaseJJ(OVR) × PosMult(pos) × AgeMult(age) × YouthBuffer(pos, age) × DevTraitMult(pos, age, trait)
  *
  * AgeMult ORDER (important):
- *   m = 1 + gain * (base_schedule[age] - 1)
- *   m = m * cliff_mod(age)
- *   if (age >= floor_age) m = floor_value
+ *   1) m = 1 + gain * (base_schedule[age] - 1)
+ *   2) m = m * cliff_mod(age)
+ *   3) if (age >= 30) m = m(29) * decay_ratio^(age-29)
+ *   4) if (age >= floor_age) m = floor_value
  *   return max(0, m)
  */
 
@@ -89,20 +90,41 @@ export function posMult(pos:string, settings:Settings){
 // Age multiplier (with cliffs, gain, and floor)
 export function ageMult(age:number, settings:Settings){
   const a = Math.max(20, Math.min(40, Math.floor(age)));
+
   const base = settings.age.base_schedule[String(a)] ?? 1.0;
   const cliff = (a>=28) ? settings.age.cliff_28_plus
                : (a>=25 && a<=27) ? settings.age.cliff_25_27
                : 1.0;
 
-  // NEW ORDER: apply gain FIRST (around 1.0), THEN apply cliff
-  // This keeps a real 28+ penalty but avoids zeroing typical ages.
-  let m = 1 + settings.age.gain * (base - 1);
+  // 1) Apply gain around 1.0
+  let m = 1 + (settings.age.gain ?? 4.0) * (base - 1);
+
+  // 2) Then apply cliff
   m = m * cliff;
 
-  // Floor (e.g., age ≥35 → 0 by default)
-  if (a >= settings.age.floor_age) m = settings.age.floor_value;
+  // 3) Post-29 geometric decay (smooth decline 30..39)
+  //    m(29) is the anchor; for age>=30 use m(29) * ratio^(age-29)
+  const decayEnabled = settings.age.post29_decay_enabled ?? true;
+  const startAge = settings.age.post29_start_age ?? 29;
+  const ratio = settings.age.post29_decay_ratio ?? 0.82; // ~18% drop per year by default
 
-  // Never return negatives
+  if (decayEnabled && a >= (startAge + 1)) {
+    // compute m at the anchor age using the same rules
+    const baseStart = settings.age.base_schedule[String(startAge)] ?? 1.0;
+    const cliffStart = (startAge>=28) ? (settings.age.cliff_28_plus ?? 1.0)
+                     : (startAge>=25 && startAge<=27) ? (settings.age.cliff_25_27 ?? 1.0)
+                     : 1.0;
+    const mStart = (1 + (settings.age.gain ?? 4.0) * (baseStart - 1)) * cliffStart;
+    const k = a - startAge;
+    m = mStart * Math.pow(ratio, k);
+  }
+
+  // 4) Floor clamp (e.g., age >= 40 => 0)
+  const floorAge = settings.age.floor_age ?? 40;
+  const floorValue = settings.age.floor_value ?? 0.0;
+  if (a >= floorAge) m = floorValue;
+
+  // never negative
   return Math.max(0, m);
 }
 
